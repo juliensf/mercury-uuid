@@ -23,6 +23,7 @@
 
     % generate(U, !IO):
     % U is a randomly generate UUID.
+    % Throws an exception if a UUID cannot be randomly generated.
     %
 :- pred generate(uuid::out, io::di, io::uo) is det.
 
@@ -49,6 +50,8 @@
 
 :- implementation.
 
+:- import_module bool.
+:- import_module exception.
 :- import_module require.
 
 :- interface.
@@ -176,31 +179,50 @@
 
 % XXX are these actually thread safe?
 
+
+generate(U, !IO) :-
+    do_generate(U, Ok, !IO),
+    (
+        Ok = yes
+    ;
+        Ok = no,
+        throw(software_error("mercury_uuid: cannot generate random UUID"))
+    ).
+
+:- pred do_generate(uuid::out, bool::out, io::di, io::uo) is det.
+
 :- pragma foreign_proc("C",
-    generate(U::out, _IO0::di, _IO::uo),
-    [will_not_call_mercury, promise_pure, not_thread_safe],
+    do_generate(U::out, Res::out, _IO0::di, _IO::uo),
+    [will_not_call_mercury, promise_pure, not_thread_safe, tabled_for_io],
 "
 #if defined(MR_WIN32) && !defined(MR_CYGWIN)
     U = MR_GC_NEW(UUID);
-    UuidCreate(U);  /* XXX Check return value */
+    if (UuidCreate(U) == RPC_S_OK) {
+        Res = MR_YES;
+    } else {
+        Res = MR_NO;
+    }
 #else
     U = MR_GC_NEW(uuid_t);
     uuid_generate(*U);
+    Res = MR_YES;
 #endif
 ").
 
 :- pragma foreign_proc("Java",
-    generate(U::out, _IO0::di, _IO::uo),
+    do_generate(U::out, Res::out, _IO0::di, _IO::uo),
     [will_not_call_mercury, promise_pure, not_thread_safe],
 "
     U = java.util.UUID.randomUUID();
+    Res = bool.YES;
 ").
 
 :- pragma foreign_proc("C#",
-    generate(U::out, _IO0::di, _IO::uo),
+    do_generate(U::out, Res::out, _IO0::di, _IO::uo),
     [will_not_call_mercury, promise_pure, not_thread_safe],
 "
     U = System.Guid.NewGuid();
+    Res = mr_bool.YES;
 ").
 
 %---------------------------------------------------------------------------%
@@ -212,13 +234,21 @@
     to_string(U::in) = (S::out),
     [will_not_call_mercury, promise_pure, thread_safe],
 "
-    S = MR_GC_malloc(sizeof(char) * 37);
 #if defined(MR_WIN32) && !defined(MR_CYGWIN)
+    RPC_STATUS res;
     RPC_CSTR c_uuid = NULL;
-    (void)UuidToString(U, &c_uuid);
-    MR_make_aligned_string_copy(S, (const char *)c_uuid);
-    RpcStringFree(&c_uuid);
+    S = MR_GC_malloc(sizeof(char) * 37);
+    res = UuidToString(U, &c_uuid);
+    if (res == RPC_S_OK) {
+        MR_make_aligned_string_copy(S, (const char *)c_uuid);
+        RpcStringFree(&c_uuid);
+    } else {
+        /* res == RCP_S_OUT_OF_MEMORY */
+        MR_external_fatal_error(""mercury_uuid"",
+            ""cannot allocate memory for UUID to string conversion"");
+    }
 #else
+    S = MR_GC_malloc(sizeof(char) * 37);
     uuid_unparse_lower(*U, S);
 #endif
 ").
