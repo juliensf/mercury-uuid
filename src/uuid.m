@@ -71,7 +71,9 @@
     where equality is uuid_equal,
           comparison is uuid_compare.
 
-:- pragma foreign_type("C#", uuid, "System.Guid").
+:- pragma foreign_type("C#", uuid, "System.Guid")
+    where equality is uuid_equal,
+          comparison is uuid_compare.
 
 %---------------------------------------------------------------------------%
 %

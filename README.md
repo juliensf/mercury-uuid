@@ -5,7 +5,7 @@ universally unique identifiers (UUIDs).
 
 ## LICENSE
 
-'mercury_json' is licensed under a simple 2-clause BSD style license.  See the
+'mercury_uuid' is licensed under a simple 2-clause BSD style license.  See the
 file [COPYING](COPYING) for details.
 
 ## TODO
