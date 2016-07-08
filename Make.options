@@ -2,3 +2,5 @@
 #
 MMC = mmc
 INSTALL_PREFIX = /usr/lib/mercury_uuid
+
+# On Windows (not Cygwin) we must also pass -lrpcrt4 to the Mercury compiler.

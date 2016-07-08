@@ -61,9 +61,19 @@
 
 %---------------------------------------------------------------------------%
 
-:- pragma foreign_decl("C", "#include <uuid/uuid.h>").
+:- pragma foreign_decl("C", "
+#if defined(MR_WIN32) && !defined(MR_CYGWIN)
+    #include ""mercury_windows.h""
+    #include <Rpc.h>
+    typedef UUID MER_uuid;
+#else
+    #include <uuid/uuid.h>
+    typedef uuid_t MER_uuid;
+#endif
 
-:- pragma foreign_type("C", uuid, "uuid_t *", [can_pass_as_mercury_type])
+").
+
+:- pragma foreign_type("C", uuid, "MER_uuid *", [can_pass_as_mercury_type])
      where equality is uuid_equal,
            comparison is uuid_compare.
 
@@ -84,7 +94,12 @@
     uuid_equal(A::in, B::in),
     [will_not_call_mercury, promise_pure, thread_safe],
 "
+#if defined(MR_WIN32) && !defined(MR_CYGWIN)
+    RPC_STATUS status;
+    SUCCESS_INDICATOR = (UuidEqual(A, B, &status)) ? MR_TRUE : MR_FALSE;
+#else
     SUCCESS_INDICATOR = (uuid_compare(*A, *B) == 0) ? MR_TRUE : MR_FALSE;
+#endif
 ").
 
 :- pragma foreign_proc("Java",
@@ -111,7 +126,12 @@
     [will_not_call_mercury, promise_pure, thread_safe],
 "
     int r;
+#if defined(MR_WIN32) && !defined(MR_CYGWIN)
+    RPC_STATUS status;
+    r = UuidCompare(A, B, &status);
+#else
     r = uuid_compare(*A, *B);
+#endif
     if (r < 0) {
         R = MR_COMPARE_LESS;
     } else if (r > 0) {
@@ -160,8 +180,13 @@
     generate(U::out, _IO0::di, _IO::uo),
     [will_not_call_mercury, promise_pure, not_thread_safe],
 "
+#if defined(MR_WIN32) && !defined(MR_CYGWIN)
+    U = MR_GC_NEW(UUID);
+    UuidCreate(U);  /* XXX Check return value */
+#else
     U = MR_GC_NEW(uuid_t);
     uuid_generate(*U);
+#endif
 ").
 
 :- pragma foreign_proc("Java",
@@ -188,7 +213,14 @@
     [will_not_call_mercury, promise_pure, thread_safe],
 "
     S = MR_GC_malloc(sizeof(char) * 37);
+#if defined(MR_WIN32) && !defined(MR_CYGWIN)
+    RPC_CSTR c_uuid = NULL;
+    (void)UuidToString(U, &c_uuid);
+    MR_make_aligned_string_copy(S, (const char *)c_uuid);
+    RpcStringFree(&c_uuid);
+#else
     uuid_unparse_lower(*U, S);
+#endif
 ").
 
 :- pragma foreign_proc("Java",
@@ -214,6 +246,16 @@
     from_string(S::in, U::out),
     [will_not_call_mercury, promise_pure, thread_safe],
 "
+#if defined(MR_WIN32) && !defined(MR_CYGWIN)
+    UUID u;
+    if (UuidFromString((unsigned char *)S, &u) == RPC_S_OK) {
+        U = MR_GC_NEW(UUID);
+        MR_memcpy(U, &u, sizeof(UUID));
+        SUCCESS_INDICATOR = MR_TRUE;
+    } else {
+        SUCCESS_INDICATOR = MR_FALSE;
+    }
+#else
     uuid_t u;
     if (uuid_parse(S, u) == 0) {
         U = MR_GC_NEW(uuid_t);
@@ -222,6 +264,7 @@
     } else {
         SUCCESS_INDICATOR = MR_FALSE;
     }
+#endif
 ").
 
 :- pragma foreign_proc("Java",
