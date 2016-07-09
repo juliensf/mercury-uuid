@@ -1,0 +1,68 @@
+=== Testing conversion to string ===
+from_string("1ec503ab-1038-4123-bfe0-2619e881d172") ==> TRUE
+from_string("1EC503AB-1038-4123-BFE0-2619E881D172") ==> TRUE
+from_string("7752e86b-55cd-46c2-bbf5-c71af5128c43") ==> TRUE
+from_string("  7752e86b-55cd-46c2-bbf5-c71af5128c43") ==> FALSE
+from_string("7752e86b-55cd-46c2-bbf5-c71af5128c43  ") ==> FALSE
+from_string("7752e86b-55cd-   46c2-bbf5-c71af5128c43") ==> FALSE
+from_string("") ==> FALSE
+from_string("abcdef") ==> FALSE
+from_string("00000000000000000000000000000000") ==> FALSE
+from_string("{00000000-0000-0000-0000-000000000000}") ==> FALSE
+from_string("(00000000-0000-0000-0000-000000000000)") ==> FALSE
+from_string("{0x00000000,0x0000,0x0000,{0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}}") ==> FALSE
+
+=== Testing Equality ===
+b3fddc1a-1d17-4b8b-b48e-35a0d4c69820 = b3fddc1a-1d17-4b8b-b48e-35a0d4c69820 ==> TRUE
+b3fddc1a-1d17-4b8b-b48e-35a0d4c69820 = f39ce8ac-14dd-4578-a920-39582dd2598f ==> FALSE
+b3fddc1a-1d17-4b8b-b48e-35a0d4c69820 = fc58eb87-6627-48ec-97b5-05dd85a42d86 ==> FALSE
+b3fddc1a-1d17-4b8b-b48e-35a0d4c69820 = 16061a91-9304-41dd-8e95-8136373f5d4a ==> FALSE
+b3fddc1a-1d17-4b8b-b48e-35a0d4c69820 = bab2a57f-397a-47e0-9d01-ebc3820e896b ==> FALSE
+f39ce8ac-14dd-4578-a920-39582dd2598f = b3fddc1a-1d17-4b8b-b48e-35a0d4c69820 ==> FALSE
+f39ce8ac-14dd-4578-a920-39582dd2598f = f39ce8ac-14dd-4578-a920-39582dd2598f ==> TRUE
+f39ce8ac-14dd-4578-a920-39582dd2598f = fc58eb87-6627-48ec-97b5-05dd85a42d86 ==> FALSE
+f39ce8ac-14dd-4578-a920-39582dd2598f = 16061a91-9304-41dd-8e95-8136373f5d4a ==> FALSE
+f39ce8ac-14dd-4578-a920-39582dd2598f = bab2a57f-397a-47e0-9d01-ebc3820e896b ==> FALSE
+fc58eb87-6627-48ec-97b5-05dd85a42d86 = b3fddc1a-1d17-4b8b-b48e-35a0d4c69820 ==> FALSE
+fc58eb87-6627-48ec-97b5-05dd85a42d86 = f39ce8ac-14dd-4578-a920-39582dd2598f ==> FALSE
+fc58eb87-6627-48ec-97b5-05dd85a42d86 = fc58eb87-6627-48ec-97b5-05dd85a42d86 ==> TRUE
+fc58eb87-6627-48ec-97b5-05dd85a42d86 = 16061a91-9304-41dd-8e95-8136373f5d4a ==> FALSE
+fc58eb87-6627-48ec-97b5-05dd85a42d86 = bab2a57f-397a-47e0-9d01-ebc3820e896b ==> FALSE
+16061a91-9304-41dd-8e95-8136373f5d4a = b3fddc1a-1d17-4b8b-b48e-35a0d4c69820 ==> FALSE
+16061a91-9304-41dd-8e95-8136373f5d4a = f39ce8ac-14dd-4578-a920-39582dd2598f ==> FALSE
+16061a91-9304-41dd-8e95-8136373f5d4a = fc58eb87-6627-48ec-97b5-05dd85a42d86 ==> FALSE
+16061a91-9304-41dd-8e95-8136373f5d4a = 16061a91-9304-41dd-8e95-8136373f5d4a ==> TRUE
+16061a91-9304-41dd-8e95-8136373f5d4a = bab2a57f-397a-47e0-9d01-ebc3820e896b ==> FALSE
+bab2a57f-397a-47e0-9d01-ebc3820e896b = b3fddc1a-1d17-4b8b-b48e-35a0d4c69820 ==> FALSE
+bab2a57f-397a-47e0-9d01-ebc3820e896b = f39ce8ac-14dd-4578-a920-39582dd2598f ==> FALSE
+bab2a57f-397a-47e0-9d01-ebc3820e896b = fc58eb87-6627-48ec-97b5-05dd85a42d86 ==> FALSE
+bab2a57f-397a-47e0-9d01-ebc3820e896b = 16061a91-9304-41dd-8e95-8136373f5d4a ==> FALSE
+bab2a57f-397a-47e0-9d01-ebc3820e896b = bab2a57f-397a-47e0-9d01-ebc3820e896b ==> TRUE
+
+=== Testing Comparison ===
+compare(b3fddc1a-1d17-4b8b-b48e-35a0d4c69820, b3fddc1a-1d17-4b8b-b48e-35a0d4c69820) ==> '='
+compare(b3fddc1a-1d17-4b8b-b48e-35a0d4c69820, f39ce8ac-14dd-4578-a920-39582dd2598f) ==> '<'
+compare(b3fddc1a-1d17-4b8b-b48e-35a0d4c69820, fc58eb87-6627-48ec-97b5-05dd85a42d86) ==> '<'
+compare(b3fddc1a-1d17-4b8b-b48e-35a0d4c69820, 16061a91-9304-41dd-8e95-8136373f5d4a) ==> '>'
+compare(b3fddc1a-1d17-4b8b-b48e-35a0d4c69820, bab2a57f-397a-47e0-9d01-ebc3820e896b) ==> '<'
+compare(f39ce8ac-14dd-4578-a920-39582dd2598f, b3fddc1a-1d17-4b8b-b48e-35a0d4c69820) ==> '>'
+compare(f39ce8ac-14dd-4578-a920-39582dd2598f, f39ce8ac-14dd-4578-a920-39582dd2598f) ==> '='
+compare(f39ce8ac-14dd-4578-a920-39582dd2598f, fc58eb87-6627-48ec-97b5-05dd85a42d86) ==> '<'
+compare(f39ce8ac-14dd-4578-a920-39582dd2598f, 16061a91-9304-41dd-8e95-8136373f5d4a) ==> '>'
+compare(f39ce8ac-14dd-4578-a920-39582dd2598f, bab2a57f-397a-47e0-9d01-ebc3820e896b) ==> '>'
+compare(fc58eb87-6627-48ec-97b5-05dd85a42d86, b3fddc1a-1d17-4b8b-b48e-35a0d4c69820) ==> '>'
+compare(fc58eb87-6627-48ec-97b5-05dd85a42d86, f39ce8ac-14dd-4578-a920-39582dd2598f) ==> '>'
+compare(fc58eb87-6627-48ec-97b5-05dd85a42d86, fc58eb87-6627-48ec-97b5-05dd85a42d86) ==> '='
+compare(fc58eb87-6627-48ec-97b5-05dd85a42d86, 16061a91-9304-41dd-8e95-8136373f5d4a) ==> '>'
+compare(fc58eb87-6627-48ec-97b5-05dd85a42d86, bab2a57f-397a-47e0-9d01-ebc3820e896b) ==> '>'
+compare(16061a91-9304-41dd-8e95-8136373f5d4a, b3fddc1a-1d17-4b8b-b48e-35a0d4c69820) ==> '<'
+compare(16061a91-9304-41dd-8e95-8136373f5d4a, f39ce8ac-14dd-4578-a920-39582dd2598f) ==> '<'
+compare(16061a91-9304-41dd-8e95-8136373f5d4a, fc58eb87-6627-48ec-97b5-05dd85a42d86) ==> '<'
+compare(16061a91-9304-41dd-8e95-8136373f5d4a, 16061a91-9304-41dd-8e95-8136373f5d4a) ==> '='
+compare(16061a91-9304-41dd-8e95-8136373f5d4a, bab2a57f-397a-47e0-9d01-ebc3820e896b) ==> '<'
+compare(bab2a57f-397a-47e0-9d01-ebc3820e896b, b3fddc1a-1d17-4b8b-b48e-35a0d4c69820) ==> '>'
+compare(bab2a57f-397a-47e0-9d01-ebc3820e896b, f39ce8ac-14dd-4578-a920-39582dd2598f) ==> '<'
+compare(bab2a57f-397a-47e0-9d01-ebc3820e896b, fc58eb87-6627-48ec-97b5-05dd85a42d86) ==> '<'
+compare(bab2a57f-397a-47e0-9d01-ebc3820e896b, 16061a91-9304-41dd-8e95-8136373f5d4a) ==> '>'
+compare(bab2a57f-397a-47e0-9d01-ebc3820e896b, bab2a57f-397a-47e0-9d01-ebc3820e896b) ==> '='
+

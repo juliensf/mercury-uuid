@@ -51,7 +51,6 @@
 :- implementation.
 
 :- import_module bool.
-:- import_module exception.
 :- import_module require.
 
 :- interface.
@@ -186,7 +185,7 @@ generate(U, !IO) :-
         Ok = yes
     ;
         Ok = no,
-        throw(software_error("mercury_uuid: cannot generate random UUID"))
+        error("uuid.generate: cannot generate random UUID")
     ).
 
 :- pred do_generate(uuid::out, bool::out, io::di, io::uo) is det.
@@ -289,7 +288,7 @@ generate(U, !IO) :-
     uuid_t u;
     if (uuid_parse(S, u) == 0) {
         U = MR_GC_NEW(uuid_t);
-        MR_memcpy(U, u, 16);
+        MR_memcpy(U, u, sizeof(uuid_t));
         SUCCESS_INDICATOR = MR_TRUE;
     } else {
         SUCCESS_INDICATOR = MR_FALSE;
