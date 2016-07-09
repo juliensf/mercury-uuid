@@ -1,5 +1,3 @@
-include ../Make.options
-
 MCFLAGS = --use-grade-subdirs -O5 --intermodule-optimization
 
 MCFLAGS-mercury_uuid = --no-warn-nothing-exported --no-warn-interface-imports
