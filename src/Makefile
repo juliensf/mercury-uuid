@@ -1,16 +1,19 @@
 include ../Make.options
 
+
+MCFLAGS_FOR_UUID = $(FLAGS_FOR_RPC_LIB) --install-prefix "$(INSTALL_PREFIX)"
+
 .PHONY: default
 default:
-	$(MMC) --make libmercury_uuid
+	$(MMC) $(MCFLAGS_FOR_UUID) --make libmercury_uuid
 
 .PHONY: rebuild
 rebuild:
-	$(MMC) --rebuild libmercury_uuid
+	$(MMC) $(MCFLAGS_FOR_UUID) --rebuild libmercury_uuid
 
 .PHONY: install
 install:
-	$(MMC) --make libmercury_uuid.install
+	$(MMC) $(MCFLAGS_FOR_UUID) --make libmercury_uuid.install
 
 tags: $(wildcard *.m)
 	mtags $^
