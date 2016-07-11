@@ -53,6 +53,8 @@
     %
 :- func to_bytes(uuid) = list(int).
 
+:- func from_bytes(list(int)) = uuid.
+
 %---------------------------------------------------------------------------%
 %---------------------------------------------------------------------------%
 
@@ -60,6 +62,7 @@
 
 :- import_module bool.
 :- import_module require.
+:- import_module string.
 
 :- interface.
 
@@ -434,6 +437,68 @@ det_from_string(S) =
     Bs = list.cons((int)bytes[1], Bs);
     Bs = list.cons((int)bytes[2], Bs);
     Bs = list.cons((int)bytes[3], Bs);
+").
+
+%---------------------------------------------------------------------------%
+
+from_bytes(Bytes) = UUID :-
+    list.length(Bytes, NumBytes),
+    ( if list.length(Bytes, 16) then
+        UUID = do_from_bytes(Bytes)
+    else
+        Msg = "from_bytes: expected 16 bytes; have " ++
+            int_to_string(NumBytes),
+        error(Msg)
+    ).
+
+:- func do_from_bytes(list(int)) = uuid.
+
+:- pragma foreign_proc("C",
+    do_from_bytes(Bs::in) = (U::out),
+    [will_not_call_mercury, promise_pure, thread_safe, will_not_modify_trail],
+"
+    U = MR_GC_malloc_atomic(sizeof(uuid_t));
+    for (int i = 0; i < 16; i++) {
+        (*U)[i] = MR_list_head(Bs);
+        Bs = MR_list_tail(Bs);
+    }
+").
+
+:- pragma foreign_proc("Java",
+    do_from_bytes(Bs::in) = (U::out),
+    [will_not_call_mercury, promise_pure, thread_safe],
+"
+    long msb = 0;
+    for (int i = 0; i < 8; i++) {
+        msb = (msb << 8) + (list.det_head(Bs).byteValue() & 0xff);
+        Bs = list.det_tail(Bs);
+    }
+
+    long lsb = 0;
+    for (int i = 0; i < 8; i++) {
+        lsb = (lsb << 8) + (list.det_head(Bs).byteValue() & 0xff);
+        Bs = list.det_tail(Bs);
+    }
+
+    U = new java.util.UUID(msb, lsb);
+").
+
+:- pragma foreign_code("C#", "
+
+public static readonly byte[] bytes_to_set =
+    {3, 2, 1, 0, 5, 4, 7, 6, 8, 9, 10, 11, 12, 13, 14, 15};
+").
+
+:- pragma foreign_proc("C#",
+    do_from_bytes(Bs::in) = (U::out),
+    [will_not_call_mercury, promise_pure, thread_safe],
+"
+    byte[] bytes = new byte[16];
+    for (int i = 0; i < 16; i++) {
+        bytes[bytes_to_set[i]] = (byte)((int)list.det_head(Bs));
+        Bs = list.det_tail(Bs);
+    }
+    U = new System.Guid(bytes);
 ").
 
 %---------------------------------------------------------------------------%

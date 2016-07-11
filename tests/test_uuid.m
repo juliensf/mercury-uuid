@@ -37,6 +37,9 @@ main(!IO) :-
     io.nl(!IO),
     io.write_string("=== Test conversion to byte list ===\n", !IO),
     list.foldl(test_to_bytes, UUIDs, !IO),
+    io.nl(!IO),
+    io.write_string("=== Test conversion from byte list ===\n", !IO),
+    list.foldl(test_from_bytes, byte_lists, !IO),
     io.nl(!IO).
 
 %---------------------------------------------------------------------------%
@@ -111,6 +114,16 @@ test_to_bytes(U, !IO) :-
 
 %---------------------------------------------------------------------------%
 
+:- pred test_from_bytes(list(int)::in, io::di, io::uo) is det.
+
+test_from_bytes(Bytes, !IO) :-
+    io.format("from_bytes(%s) ==> ", [s(string(Bytes))], !IO),
+    UUID = uuid.from_bytes(Bytes),
+    io.write_string(uuid.to_string(UUID), !IO),
+    io.nl(!IO).
+
+%---------------------------------------------------------------------------%
+
 :- func test_uuids = list(uuid).
 
 test_uuids = [
@@ -119,6 +132,18 @@ test_uuids = [
     det_from_string("fc58eb87-6627-48ec-97b5-05dd85a42d86"),
     det_from_string("16061a91-9304-41dd-8e95-8136373f5d4a"),
     det_from_string("bab2a57f-397a-47e0-9d01-ebc3820e896b")
+].
+
+%---------------------------------------------------------------------------%
+
+:- func byte_lists = list(list(int)).
+
+byte_lists = [
+    [179, 253, 220, 26, 29, 23, 75, 139, 180, 142, 53, 160, 212, 198, 152, 32],
+    [243, 156, 232, 172, 20, 221, 69, 120, 169, 32, 57, 88, 45, 210, 89, 143],
+    [252, 88, 235, 135, 102, 39, 72, 236, 151, 181, 5, 221, 133, 164, 45, 134],
+    [22, 6, 26, 145, 147, 4, 65, 221, 142, 149, 129, 54, 55, 63, 93, 74],
+    [186, 178, 165, 127, 57, 122, 71, 224, 157, 1, 235, 195, 130, 14, 137, 107]
 ].
 
 %---------------------------------------------------------------------------%
