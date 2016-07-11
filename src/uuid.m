@@ -22,18 +22,18 @@
 
 :- type uuid.
 
-    % generate(U, !IO):
-    % U is a randomly generate UUID.
-    % Throws an exception if a UUID cannot be randomly generated.
+    % generate(UUID, !IO):
+    % Randomly generate a UUID.
+    % Throws an exception if the UUID cannot be randomly generated.
     %
 :- pred generate(uuid::out, io::di, io::uo) is det.
 
-    % to_string(U) = S:
-    % S is the string representation of U.
+    % to_string(UUID) = S:
+    % S is the string representation of UUID.
     %
 :- func to_string(uuid) = string.
 
-    % from_string(S, U):
+    % from_string(S, UUID):
     % Convert a string of the form:
     %
     %    xxxxxxx-xxxx-xxxx-xxxxxxxxxxxx
@@ -44,15 +44,17 @@
     %
 :- pred from_string(string::in, uuid::out) is semidet.
 
-    % det_from_string(S) = U:
+    % det_from_string(S) = UUID:
     % As above, but throws a software_error/1 exception instead of failing.
     %
 :- func det_from_string(string) = uuid.
 
-    % to_bytes(U) = Bs:
+    % to_bytes(UUID) = Bytes:
     %
 :- func to_bytes(uuid) = list(int).
 
+    % from_bytes(Bytes) = UUID:
+    %
 :- func from_bytes(list(int)) = uuid.
 
 %---------------------------------------------------------------------------%
@@ -360,19 +362,19 @@ det_from_string(S) =
     Bs = MR_list_empty();
 #if defined(MR_WIN32) && !defined(MR_CYGWIN)
 
-    unsigned long data1 = (*U).Data1;
-    unsigned short data2 = (*U).Data2;
-    unsigned short data3 = (*U).Data3;
+    unsigned long data1 = U->Data1;
+    unsigned short data2 = U->Data2;
+    unsigned short data3 = U->Data3;
 
-    Bs = MR_list_cons((*U).Data4[7], Bs);
-    Bs = MR_list_cons((*U).Data4[6], Bs);
-    Bs = MR_list_cons((*U).Data4[5], Bs);
-    Bs = MR_list_cons((*U).Data4[4], Bs);
-    Bs = MR_list_cons((*U).Data4[3], Bs);
-    Bs = MR_list_cons((*U).Data4[2], Bs);
+    Bs = MR_list_cons(U->Data4[7], Bs);
+    Bs = MR_list_cons(U->Data4[6], Bs);
+    Bs = MR_list_cons(U->Data4[5], Bs);
+    Bs = MR_list_cons(U->Data4[4], Bs);
+    Bs = MR_list_cons(U->Data4[3], Bs);
+    Bs = MR_list_cons(U->Data4[2], Bs);
 
-    Bs = MR_list_cons((*U).Data4[1], Bs);
-    Bs = MR_list_cons((*U).Data4[0], Bs);
+    Bs = MR_list_cons(U->Data4[1], Bs);
+    Bs = MR_list_cons(U->Data4[0], Bs);
 
     Bs = MR_list_cons(((unsigned char *)(&data3))[0], Bs);
     Bs = MR_list_cons(((unsigned char *)(&data3))[1], Bs);
@@ -457,11 +459,46 @@ from_bytes(Bytes) = UUID :-
     do_from_bytes(Bs::in) = (U::out),
     [will_not_call_mercury, promise_pure, thread_safe, will_not_modify_trail],
 "
+#if defined(MR_WIN32) && !defined(MR_CYGWIN)
+
+    unsigned long data1 = 0;
+    unsigned short data2 = 0;
+    unsigned short data3 = 0;
+
+    U = MR_GC_malloc_atomic(sizeof(UUID));
+
+    for (int i = 3; i >= 0; i--) {
+        ((unsigned char *)(&data1))[i] = (unsigned char) MR_list_head(Bs);
+        Bs = MR_list_tail(Bs);
+    }
+    U->Data1 = data1;
+
+    ((unsigned char *)(&data2))[1] = (unsigned char) MR_list_head(Bs);
+    Bs = MR_list_tail(Bs);
+    ((unsigned char *)(&data2))[0] = (unsigned char) MR_list_head(Bs);
+    Bs = MR_list_tail(Bs);
+    U->Data2 = data2;
+
+    ((unsigned char *)(&data3))[1] = (unsigned char) MR_list_head(Bs);
+    Bs = MR_list_tail(Bs);
+    ((unsigned char *)(&data3))[0] = (unsigned char) MR_list_head(Bs);
+    Bs = MR_list_tail(Bs);
+    U->Data3 = data3;
+
+    for (int i = 0; i < 8; i++) {
+        U->Data4[i] = (unsigned char) MR_list_head(Bs);
+        Bs = MR_list_tail(Bs);
+    }
+
+#else
+
     U = MR_GC_malloc_atomic(sizeof(uuid_t));
     for (int i = 0; i < 16; i++) {
         (*U)[i] = MR_list_head(Bs);
         Bs = MR_list_tail(Bs);
     }
+
+#endif
 ").
 
 :- pragma foreign_proc("Java",
