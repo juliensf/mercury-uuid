@@ -34,6 +34,9 @@ main(!IO) :-
     io.nl(!IO),
     io.write_string("=== Testing Comparison ===\n", !IO),
     list.foldl(test_comparison(UUIDs), UUIDs, !IO),
+    io.nl(!IO),
+    io.write_string("=== Test conversion to byte list ===\n", !IO),
+    list.foldl(test_to_bytes, UUIDs, !IO),
     io.nl(!IO).
 
 %---------------------------------------------------------------------------%
@@ -96,6 +99,15 @@ do_test_comparison(A, B, !IO) :-
         !IO),
     compare(Res, A, B),
     io.print_line(Res, !IO).
+
+%---------------------------------------------------------------------------%
+
+:- pred test_to_bytes(uuid::in, io::di, io::uo) is det.
+
+test_to_bytes(U, !IO) :-
+    io.format("to_bytes(%s) ==> ", [s(to_string(U))], !IO),
+    Bytes = uuid.to_bytes(U),
+    io.print_line(Bytes, !IO).
 
 %---------------------------------------------------------------------------%
 

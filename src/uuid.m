@@ -16,6 +16,7 @@
 :- interface.
 
 :- import_module io.
+:- import_module list.
 
 %---------------------------------------------------------------------------%
 
@@ -37,13 +38,20 @@
     %
     %    xxxxxxx-xxxx-xxxx-xxxxxxxxxxxx
     %
-    % where 'x' is a hexadecimal digit into a UUID.
+    % where 'x' is a hexadecimal digit, into a UUID.
     % Leading and trailing whitespace is _not_ allowed.
     % Fails if S is not of the above form.
     %
 :- pred from_string(string::in, uuid::out) is semidet.
 
+    % det_from_string(S) = U:
+    % As above, but throws a software_error/1 exception instead of failing.
+    %
 :- func det_from_string(string) = uuid.
+
+    % to_bytes(U) = Bs:
+    %
+:- func to_bytes(uuid) = list(int).
 
 %---------------------------------------------------------------------------%
 %---------------------------------------------------------------------------%
@@ -94,7 +102,7 @@
 
 :- pragma foreign_proc("C",
     uuid_equal(A::in, B::in),
-    [will_not_call_mercury, promise_pure, thread_safe],
+    [will_not_call_mercury, promise_pure, thread_safe, will_not_modify_trail],
 "
 #if defined(MR_WIN32) && !defined(MR_CYGWIN)
     RPC_STATUS status;
@@ -125,7 +133,7 @@
 
 :- pragma foreign_proc("C",
     uuid_compare(R::uo, A::in, B::in),
-    [will_not_call_mercury, promise_pure, thread_safe],
+    [will_not_call_mercury, promise_pure, thread_safe, will_not_modify_trail],
 "
     int r;
 #if defined(MR_WIN32) && !defined(MR_CYGWIN)
@@ -192,7 +200,8 @@ generate(U, !IO) :-
 
 :- pragma foreign_proc("C",
     do_generate(U::out, Res::out, _IO0::di, _IO::uo),
-    [will_not_call_mercury, promise_pure, not_thread_safe, tabled_for_io],
+    [will_not_call_mercury, promise_pure, not_thread_safe, tabled_for_io,
+        will_not_modify_trail],
 "
 #if defined(MR_WIN32) && !defined(MR_CYGWIN)
     U = MR_GC_malloc_atomic(sizeof(UUID));
@@ -231,7 +240,7 @@ generate(U, !IO) :-
 
 :- pragma foreign_proc("C",
     to_string(U::in) = (S::out),
-    [will_not_call_mercury, promise_pure, thread_safe],
+    [will_not_call_mercury, promise_pure, thread_safe, will_not_modify_trail],
 "
 #if defined(MR_WIN32) && !defined(MR_CYGWIN)
     RPC_STATUS res;
@@ -273,7 +282,7 @@ generate(U, !IO) :-
 
 :- pragma foreign_proc("C",
     from_string(S::in, U::out),
-    [will_not_call_mercury, promise_pure, thread_safe],
+    [will_not_call_mercury, promise_pure, thread_safe, will_not_modify_trail],
 "
 #if defined(MR_WIN32) && !defined(MR_CYGWIN)
     UUID u;
@@ -335,6 +344,70 @@ det_from_string(S) =
     then U
     else func_error("uuid.det_from_string: string is not a UUID")
     ).
+
+%---------------------------------------------------------------------------%
+%
+% Conversion to byte list.
+%
+
+:- pragma foreign_proc("C",
+    to_bytes(U::in) = (Bs::out),
+    [will_not_call_mercury, promise_pure, thread_safe, will_not_modify_trail],
+"
+    Bs = MR_list_empty();
+#if defined(MR_WIN32) && !defined(MR_CYGWIN)
+    ; /* XXX TODO */
+#else
+    for (int i = 15; i >= 0; i--) {
+        Bs = MR_list_cons((*U)[i], Bs);
+    }
+#endif
+").
+
+:- pragma foreign_proc("Java",
+    to_bytes(U::in) = (Bs::out),
+    [will_not_call_mercury, promise_pure, thread_safe],
+"
+    Bs = list.empty_list();
+
+    long lsb = U.getLeastSignificantBits();
+    for (int s = 0; s <= 56; s+=8) {
+        Bs = list.cons((int)((byte)(lsb >>> s) & 0xff), Bs);
+    }
+
+    long msb = U.getMostSignificantBits();
+    for (int s = 0; s <= 56; s+=8) {
+        Bs = list.cons((int)((byte)(msb >>> s) & 0xff), Bs);
+    }
+").
+
+:- pragma foreign_proc("C#",
+    to_bytes(U::in) = (Bs::out),
+    [will_not_call_mercury, promise_pure, thread_safe],
+"
+    byte[] bytes = U.ToByteArray();
+    Bs = list.empty_list();
+    Bs = list.cons((int)bytes[15], Bs);
+    Bs = list.cons((int)bytes[14], Bs);
+    Bs = list.cons((int)bytes[13], Bs);
+    Bs = list.cons((int)bytes[12], Bs);
+    Bs = list.cons((int)bytes[11], Bs);
+    Bs = list.cons((int)bytes[10], Bs);
+
+    Bs = list.cons((int)bytes[9], Bs);
+    Bs = list.cons((int)bytes[8], Bs);
+
+    Bs = list.cons((int)bytes[6], Bs);
+    Bs = list.cons((int)bytes[7], Bs);
+
+    Bs = list.cons((int)bytes[4], Bs);
+    Bs = list.cons((int)bytes[5], Bs);
+
+    Bs = list.cons((int)bytes[0], Bs);
+    Bs = list.cons((int)bytes[1], Bs);
+    Bs = list.cons((int)bytes[2], Bs);
+    Bs = list.cons((int)bytes[3], Bs);
+").
 
 %---------------------------------------------------------------------------%
 :- end_module uuid.
