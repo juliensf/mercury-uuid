@@ -195,14 +195,14 @@ generate(U, !IO) :-
     [will_not_call_mercury, promise_pure, not_thread_safe, tabled_for_io],
 "
 #if defined(MR_WIN32) && !defined(MR_CYGWIN)
-    U = MR_GC_NEW(UUID);
+    U = MR_GC_malloc_atomic(sizeof(UUID));
     if (UuidCreate(U) == RPC_S_OK) {
         Res = MR_YES;
     } else {
         Res = MR_NO;
     }
 #else
-    U = MR_GC_NEW(uuid_t);
+    U = MR_GC_malloc_atomic(sizeof(uuid_t));
     uuid_generate(*U);
     Res = MR_YES;
 #endif
@@ -278,7 +278,7 @@ generate(U, !IO) :-
 #if defined(MR_WIN32) && !defined(MR_CYGWIN)
     UUID u;
     if (UuidFromString((unsigned char *)S, &u) == RPC_S_OK) {
-        U = MR_GC_NEW(UUID);
+        U = MR_GC_malloc_atomic(sizeof(UUID));
         MR_memcpy(U, &u, sizeof(UUID));
         SUCCESS_INDICATOR = MR_TRUE;
     } else {
@@ -287,7 +287,7 @@ generate(U, !IO) :-
 #else
     uuid_t u;
     if (uuid_parse(S, u) == 0) {
-        U = MR_GC_NEW(uuid_t);
+        U = MR_GC_malloc_atomic(sizeof(uuid_t));
         MR_memcpy(U, u, sizeof(uuid_t));
         SUCCESS_INDICATOR = MR_TRUE;
     } else {
