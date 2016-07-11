@@ -356,11 +356,38 @@ det_from_string(S) =
 "
     Bs = MR_list_empty();
 #if defined(MR_WIN32) && !defined(MR_CYGWIN)
-    ; /* XXX TODO */
+
+    unsigned long data1 = (*U).Data1;
+    unsigned short data2 = (*U).Data2;
+    unsigned short data3 = (*U).Data3;
+
+    Bs = MR_list_cons((*U).Data4[7], Bs);
+    Bs = MR_list_cons((*U).Data4[6], Bs);
+    Bs = MR_list_cons((*U).Data4[5], Bs);
+    Bs = MR_list_cons((*U).Data4[4], Bs);
+    Bs = MR_list_cons((*U).Data4[3], Bs);
+    Bs = MR_list_cons((*U).Data4[2], Bs);
+
+    Bs = MR_list_cons((*U).Data4[1], Bs);
+    Bs = MR_list_cons((*U).Data4[0], Bs);
+
+    Bs = MR_list_cons(((unsigned char *)(&data3))[0], Bs);
+    Bs = MR_list_cons(((unsigned char *)(&data3))[1], Bs);
+
+    Bs = MR_list_cons(((unsigned char *)(&data2))[0], Bs);
+    Bs = MR_list_cons(((unsigned char *)(&data2))[1], Bs);
+
+    Bs = MR_list_cons(((unsigned char *)(&data1))[0], Bs);
+    Bs = MR_list_cons(((unsigned char *)(&data1))[1], Bs);
+    Bs = MR_list_cons(((unsigned char *)(&data1))[2], Bs);
+    Bs = MR_list_cons(((unsigned char *)(&data1))[3], Bs);
+
 #else
+
     for (int i = 15; i >= 0; i--) {
         Bs = MR_list_cons((*U)[i], Bs);
     }
+
 #endif
 ").
 
