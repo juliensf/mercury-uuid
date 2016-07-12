@@ -20,16 +20,34 @@
 
 %---------------------------------------------------------------------------%
 
+    % A universally unique identifier (UUID).
+    %
+    % In C grades the representation is as follows:
+    %   * For platforms that use libuuid it is a pointer to "uuid_t".
+    %   * On Windows it is a pointer to "UUID".
+    %
+    % In the Java grade the representation is a "java.util.UUID" object.
+    % In the C# grade the representation is a "System.Guid" object.
+    %
+    % XXX TODO grade independent comparison (currently backend dependent).
+    %
 :- type uuid.
 
     % generate(UUID, !IO):
     % Randomly generate a UUID.
-    % Throws an exception if the UUID cannot be randomly generated.
+    % Throws a software_error/1 exception if a UUID cannot be randomly
+    % generated.
     %
 :- pred generate(uuid::out, io::di, io::uo) is det.
 
     % to_string(UUID) = S:
     % S is the string representation of UUID.
+    % S will have the form:
+    %
+    %    xxxxxxx-xxxx-xxxx-xxxxxxxxxxxx
+    %
+    % where each 'x' is a hexadecimal digit.  Alphabetic hexadecimal
+    % digits will be lowercase.
     %
 :- func to_string(uuid) = string.
 
@@ -51,9 +69,27 @@
 
     % to_bytes(UUID) = Bytes:
     %
+    % Bytes is a list of unsigned bytes in the UUID ordered from most
+    % significant to least significant byte.
+    % The list of bytes is represented by list of ints, with each byte
+    % occupying the lower 8 bits of an int.
+    %
+    % Note that the above ordering will be returned even on platforms where the
+    % underlying representation is the Microsoft one.
+    %
 :- func to_bytes(uuid) = list(int).
 
     % from_bytes(Bytes) = UUID:
+    %
+    % Construct UUID from the list of unsigned bytes in Bytes.
+    % Each byte is represented using the lower 8 bits of each int with
+    % the remaining bits being ignored.
+    % Bytes must be ordered from most significant to least significant byte.
+    %
+    % Note that the above ordering is used even on platforms where the
+    % underyling representation is the Microsoft one.
+    %
+    % Throws a software_error/1 exception if length(Bytes, 16) is false.
     %
 :- func from_bytes(list(int)) = uuid.
 
