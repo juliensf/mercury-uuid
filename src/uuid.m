@@ -44,7 +44,7 @@
     % S is the string representation of UUID.
     % S will have the form:
     %
-    %    xxxxxxx-xxxx-xxxx-xxxxxxxxxxxx
+    %    xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
     %
     % where each 'x' is a hexadecimal digit.  Alphabetic hexadecimal
     % digits will be lowercase.
@@ -54,7 +54,7 @@
     % from_string(S, UUID):
     % Convert a string of the form:
     %
-    %    xxxxxxx-xxxx-xxxx-xxxxxxxxxxxx
+    %    xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
     %
     % where 'x' is a hexadecimal digit, into a UUID.
     % Leading and trailing whitespace is _not_ allowed.
@@ -87,7 +87,7 @@
     % Bytes must be ordered from most significant to least significant byte.
     %
     % Note that the above ordering is used even on platforms where the
-    % underyling representation is the Microsoft one.
+    % underlying representation is the Microsoft one.
     %
     % Throws a software_error/1 exception if length(Bytes, 16) is false.
     %
