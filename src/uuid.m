@@ -29,7 +29,8 @@
     % In the Java grade the representation is a "java.util.UUID" object.
     % In the C# grade the representation is a "System.Guid" object.
     %
-    % XXX TODO grade independent comparison (currently backend dependent).
+    % Comparison for UUIDs is defined as it is in libuuid.
+    % XXX provide more details.
     %
 :- type uuid.
 
@@ -196,14 +197,84 @@
     uuid_compare(R::uo, A::in, B::in),
     [will_not_call_mercury, promise_pure, thread_safe],
 "
-    int r = A.compareTo(B);
-    if (r < 0) {
-        R = builtin.COMPARE_LESS;
-    } else if (r > 0) {
-        R = builtin.COMPARE_GREATER;
-    } else {
-        R = builtin.COMPARE_EQUAL;
+    R = do_uuid_compare(A, B);
+").
+
+:- pragma foreign_code("Java", "
+
+// Java's UUID.compareTo method works by comparing the long components of the
+// UUID.  This is not consistent with how libbuid etc implement comparison of
+// UUIDs.  The following implements the libuuid style comparison for Java.
+//
+public static builtin.Comparison_result_0 do_uuid_compare(
+     java.util.UUID A, java.util.UUID B)
+{
+    long msbA = A.getMostSignificantBits();
+    long msbB = B.getMostSignificantBits();
+
+    int time_lowA = (int)(msbA >>> 32);
+    int time_lowB = (int)(msbB >>> 32);
+    if (time_lowA != time_lowB) {
+        // Unsigned 32-bit comparison.
+        if ((time_lowA & 0xffffffffL) > (time_lowB & 0xffffffffL)) {
+            return builtin.COMPARE_GREATER;
+        } else {
+            return builtin.COMPARE_LESS;
+        }
     }
+
+    short time_midA = (short)((msbA & 0xffff0000) >>> 16);
+    short time_midB = (short)((msbB & 0xffff0000) >>> 16);
+    if (time_midA != time_midB) {
+        if ((time_midA & 0xffff) > (time_midB & 0xffff)) {
+            return builtin.COMPARE_GREATER;
+        } else {
+            return builtin.COMPARE_LESS;
+        }
+    }
+
+    short time_hi_and_versionA = (short)((msbA & 0xffff));
+    short time_hi_and_versionB = (short)((msbB & 0xffff));
+    if (time_hi_and_versionA != time_hi_and_versionB) {
+        // Unsigned 16-bit comparison.
+        if (
+            (time_hi_and_versionA & 0xffff) >
+            (time_hi_and_versionB & 0xffff)
+        ) {
+            return builtin.COMPARE_GREATER;
+        } else {
+            return builtin.COMPARE_LESS;
+        }
+    }
+
+    long lsbA = A.getLeastSignificantBits();
+    long lsbB = B.getLeastSignificantBits();
+
+    short clock_seqA = (short)(lsbA >>> 48);
+    short clock_seqB = (short)(lsbB >>> 48);
+    if (clock_seqA != clock_seqB) {
+        if ((clock_seqA & 0xffff) > (clock_seqB & 0xffff)) {
+            return builtin.COMPARE_GREATER;
+        } else {
+            return builtin.COMPARE_LESS;
+        }
+    }
+
+    for (int i = 40; i >= 0; i-=8) {
+        byte nodeA = (byte)((lsbA >>> i) & 0xff);
+        byte nodeB = (byte)((lsbB >>> i) & 0xff);
+        if (nodeA != nodeB) {
+            if ((nodeA & 0xff) > (nodeB & 0xff)) {
+                return builtin.COMPARE_GREATER;
+            } else {
+                return builtin.COMPARE_LESS;
+            }
+        }
+    }
+
+    return builtin.COMPARE_EQUAL;
+}
+
 ").
 
 :- pragma foreign_proc("C#",

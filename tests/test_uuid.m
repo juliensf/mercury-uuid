@@ -131,7 +131,9 @@ test_uuids = [
     det_from_string("f39ce8ac-14dd-4578-a920-39582dd2598f"),
     det_from_string("fc58eb87-6627-48ec-97b5-05dd85a42d86"),
     det_from_string("16061a91-9304-41dd-8e95-8136373f5d4a"),
-    det_from_string("bab2a57f-397a-47e0-9d01-ebc3820e896b")
+    det_from_string("bab2a57f-397a-47e0-9d01-ebc3820e896b"),
+    det_from_string("ffffffff-ffff-ffff-ffff-ffff11111111"),
+    det_from_string("ffffffff-ffff-ffff-ffff-ffff22222222")
 ].
 
 %---------------------------------------------------------------------------%
