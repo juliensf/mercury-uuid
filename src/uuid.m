@@ -7,8 +7,8 @@
 % Author: Julien Fischer <juliensf@gmail.com>
 %
 % A Mercury library providing universally unique identifiers (UUIDs).
-% Note that this is a wrapper around whatever UUID functionality the underlying
-% platform provides and not a Mercury implementation of them.
+% Note that this is a wrapper around whatever UUID functionality the
+% underlying platform provides and not a Mercury implementation of them.
 %
 %---------------------------------------------------------------------------%
 
@@ -23,14 +23,23 @@
     % A universally unique identifier (UUID).
     %
     % In C grades the representation is as follows:
-    %   * For platforms that use libuuid it is a pointer to "uuid_t".
-    %   * On Windows it is a pointer to "UUID".
+    %   - For platforms that use libuuid it is a pointer to "uuid_t".
+    %   - On Windows it is a pointer to "UUID".
     %
     % In the Java grade the representation is a "java.util.UUID" object.
     % In the C# grade the representation is a "System.Guid" object.
     %
-    % Comparison for UUIDs is defined as it is in libuuid.
-    % XXX provide more details.
+    % Ordering on uuid/0 values is defined lexicographically on the
+    % components of the UUID, arranged as follows:
+    %
+    %     Bytes 1 - 4   : an unsigned 32-bit integer.
+    %     Bytes 5 - 6   : an unsigned 16-bit integer.
+    %     Bytes 7 - 8   : an unsigned 16-bit integer.
+    %     Bytes 9 - 10  : an unsigned 16-bit integer.
+    %     Bytes 11 - 16 : 6 unsigned 8-bit integers.
+    %
+    % Note that for the Java backend the above ordering differs from that
+    % provided by the compareTo() method.
     %
 :- type uuid.
 
