@@ -13,8 +13,8 @@
 :- module uuid.
 :- interface.
 
-%:- import_module io.
 :- import_module list.
+:- import_module random.
 
 %---------------------------------------------------------------------------%
 
@@ -90,18 +90,24 @@
     %
 :- func from_bytes(list(uint8)) = uuid.
 
-    % generate(UUID, !IO):
-    % Randomly generate a UUID.
-    % Throws a software_error/1 exception if a UUID cannot be randomly
-    % generated.
+    % generate(RNG, UUID, !State):
     %
-%:- pred generate(uuid::out, io::di, io::uo) is det.
+    % Generate a type 4 UUID using bytes supplied by the given random number
+    % generator.
+    %
+    % NOTE: you _must_ use a cryptographically strong (pseudo) random number
+    % generator with this predicate in order to minimise the possibility
+    % collisions.
+    %
+:- pred random_uuid(R::in, uuid::out, State::di, State::uo) is det
+    <= urandom(R, State).
 
 %---------------------------------------------------------------------------%
 %---------------------------------------------------------------------------%
 
 :- implementation.
 
+:- import_module array.
 :- import_module bool.
 :- import_module char.
 :- import_module int.
@@ -289,7 +295,8 @@ nil_uuid = uuid(0u32, 0u16, 0u16, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8).
 ").
 
 :- pragma foreign_code("Java", "
-    public static final ML_NIL_UUID = new java.util.UUID(0L, 0L);
+    public static final java.util.UUID ML_NIL_UUID =
+        new java.util.UUID(0L, 0L);
 ").
 
 :- pragma foreign_proc("Java",
@@ -618,55 +625,30 @@ public static readonly byte[] bytes_to_set =
 % Random generation.
 %
 
-/*
-% XXX are these actually thread safe?
-
-generate(U, !IO) :-
-    do_generate(U, Ok, !IO),
-    (
-        Ok = yes
-    ;
-        Ok = no,
-        error("uuid.generate: cannot generate random UUID")
+random_uuid(RNG, UUID, !State) :-
+    some [!ByteArray] (
+        array.generate_foldl(16, generate_byte(RNG), !:ByteArray, !State),
+        some [!B6] (
+            array.unsafe_lookup(!.ByteArray, 6, !:B6),
+            !:B6 = !.B6 /\ 0x0f_u8,  % Clear version.
+            !:B6 = !.B6 \/ 0x40_u8,  % Set to version 4 (randomly generated).
+            array.unsafe_set(6, !.B6, !ByteArray)
+        ),
+        some [!B8] (
+            array.unsafe_lookup(!.ByteArray, 8, !:B8),
+            !:B8 = !.B8 /\ 0x3f_u8,  % Clear variant.
+            !:B8 = !.B8 \/ 0x80_u8,  % Set to IETF variant.
+            array.unsafe_set(8, !.B8, !ByteArray)
+        ),
+        Bytes = array.to_list(!.ByteArray),
+        UUID = from_bytes(Bytes)
     ).
 
-:- pred do_generate(uuid::out, bool::out, io::di, io::uo) is det.
+:- pred generate_byte(RNG::in, int::in, uint8::out, State::di, State::uo)
+    is det <= urandom(RNG, State).
 
-:- pragma foreign_proc("C",
-    do_generate(U::out, Res::out, _IO0::di, _IO::uo),
-    [will_not_call_mercury, promise_pure, not_thread_safe, tabled_for_io,
-        will_not_modify_trail],
-"
-#if defined(MR_WIN32) && !defined(MR_CYGWIN)
-    U = MR_GC_malloc_atomic(sizeof(UUID));
-    if (UuidCreate(U) == RPC_S_OK) {
-        Res = MR_YES;
-    } else {
-        Res = MR_NO;
-    }
-#else
-    U = MR_GC_malloc_atomic(sizeof(uuid_t));
-    uuid_generate(*U);
-    Res = MR_YES;
-#endif
-").
-
-:- pragma foreign_proc("Java",
-    do_generate(U::out, Res::out, _IO0::di, _IO::uo),
-    [will_not_call_mercury, promise_pure, not_thread_safe],
-"
-    U = java.util.UUID.randomUUID();
-    Res = bool.YES;
-").
-
-:- pragma foreign_proc("C#",
-    do_generate(U::out, Res::out, _IO0::di, _IO::uo),
-    [will_not_call_mercury, promise_pure, not_thread_safe],
-"
-    U = System.Guid.NewGuid();
-    Res = mr_bool.YES;
-").
-*/
+generate_byte(RNG, _, Byte, !State) :-
+    random.generate_uint8(RNG, Byte, !State).
 
 %---------------------------------------------------------------------------%
 :- end_module uuid.

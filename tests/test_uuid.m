@@ -16,16 +16,20 @@
 
 :- import_module uuid.
 
+:- import_module int.
 :- import_module list.
+:- import_module random.
+:- import_module random.sfc32.
+
 :- import_module string.
 
 %---------------------------------------------------------------------------%
 
 main(!IO) :-
-    %uuid.generate(UUID, !IO),
-    %io.write_string(to_string(UUID), !IO),
-    %io.nl(!IO),
-    io.write_string("=== Testing conversion to string ===\n", !IO),
+    io.write_string("=== Testing random generation ===\n", !IO),
+    test_random_generation(16, !IO),
+    io.nl(!IO),
+    io.write_string("=== Testing conversion from string ===\n", !IO),
     list.foldl(test_from_string, test_strings, !IO),
     io.nl(!IO),
     io.write_string("=== Testing Equality ===\n", !IO),
@@ -44,13 +48,34 @@ main(!IO) :-
 
 %---------------------------------------------------------------------------%
 
+:- pred test_random_generation(int::in, io::di, io::uo) is det.
+
+test_random_generation(I, !IO):-
+    sfc32.init(RNG, State0),
+    do_test_random_generation(RNG, I, State0, _State, !IO).
+
+:- pred do_test_random_generation(RNG::in, int::in, State::di, State::uo,
+    io::di, io::uo) is det <= urandom(RNG, State).
+
+do_test_random_generation(RNG, I, !State, !IO) :-
+    ( if I > 0 then
+        random_uuid(RNG, UUID, !State),
+        io.print_line(to_string(UUID), !IO),
+        do_test_random_generation(RNG, I - 1, !State, !IO)
+    else
+        true
+    ).
+
+%---------------------------------------------------------------------------%
+
 :- pred test_from_string(string::in, io::di, io::uo) is det.
 
 test_from_string(S, !IO) :-
     io.format("from_string(\"%s\") ==> ", [s(S)], !IO),
-    ( if uuid.from_string(S, _)
-    then io.write_string("TRUE\n", !IO)
-    else io.write_string("FALSE\n", !IO)
+    ( if uuid.from_string(S, _) then
+        io.write_string("TRUE\n", !IO)
+    else
+        io.write_string("FALSE\n", !IO)
     ).
 
 :- func test_strings = list(string).
@@ -128,13 +153,13 @@ test_from_bytes(Bytes, !IO) :-
 :- func test_uuids = list(uuid).
 
 test_uuids = [
-    det_from_string("b3fddc1a-1d17-4b8b-b48e-35a0d4c69820"),
-    det_from_string("f39ce8ac-14dd-4578-a920-39582dd2598f"),
-    det_from_string("fc58eb87-6627-48ec-97b5-05dd85a42d86"),
-    det_from_string("16061a91-9304-41dd-8e95-8136373f5d4a"),
-    det_from_string("bab2a57f-397a-47e0-9d01-ebc3820e896b"),
-    det_from_string("ffffffff-ffff-ffff-ffff-ffff11111111"),
-    det_from_string("ffffffff-ffff-ffff-ffff-ffff22222222")
+    uuid("b3fddc1a-1d17-4b8b-b48e-35a0d4c69820"),
+    uuid("f39ce8ac-14dd-4578-a920-39582dd2598f"),
+    uuid("fc58eb87-6627-48ec-97b5-05dd85a42d86"),
+    uuid("16061a91-9304-41dd-8e95-8136373f5d4a"),
+    uuid("bab2a57f-397a-47e0-9d01-ebc3820e896b"),
+    uuid("ffffffff-ffff-ffff-ffff-ffff11111111"),
+    uuid("ffffffff-ffff-ffff-ffff-ffff22222222")
 ].
 
 %---------------------------------------------------------------------------%

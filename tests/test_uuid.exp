@@ -1,4 +1,22 @@
-=== Testing conversion to string ===
+=== Testing random generation ===
+9767124a-fda2-4b95-bf8d-3bb54054c68f
+4c8222cf-b9bf-487d-b456-bbe391805d89
+a8d14cf9-1652-4682-a963-d8853acdda8b
+0d74aa53-ea12-4c0a-a2fc-33114ccc4eea
+e6a215a8-5c08-4f3f-8a39-dbd56d336013
+03c192f2-f076-4d4c-9869-04b533eb544c
+c6aa67fd-7a21-45cc-b966-bc7eaeaf4aa6
+670ba45c-f328-4898-8fc6-ef8adf0bfab1
+4dcc0b9e-861a-41d1-a28f-1e249952dd09
+04bbebf0-6824-4dd1-a490-95b23df765fd
+2bf15a58-98b2-4647-b37e-12de61d418b1
+141b5f18-3401-41b6-8cd3-5b5b9d8c3d17
+324648fe-e628-4b4b-bcfc-18f30f245041
+d2e53310-7d84-42bd-8df1-aea36c51d9e6
+b0da7cdf-e7be-48fa-b822-8fd8ec2d1cc8
+27f805b1-efe6-43df-b1da-32ebb8b880c4
+
+=== Testing conversion from string ===
 from_string("1ec503ab-1038-4123-bfe0-2619e881d172") ==> TRUE
 from_string("1EC503AB-1038-4123-BFE0-2619E881D172") ==> TRUE
 from_string("7752e86b-55cd-46c2-bbf5-c71af5128c43") ==> TRUE
