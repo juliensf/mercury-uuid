@@ -1,7 +1,6 @@
 include ../Make.options
 
-
-MCFLAGS_FOR_UUID = $(FLAGS_FOR_RPC_LIB) --install-prefix "$(INSTALL_PREFIX)"
+MCFLAGS_FOR_UUID = --install-prefix "$(INSTALL_PREFIX)"
 
 .PHONY: default
 default:

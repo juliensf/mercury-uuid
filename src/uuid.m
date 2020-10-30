@@ -6,49 +6,42 @@
 %
 % Author: Julien Fischer <juliensf@gmail.com>
 %
-% A Mercury library providing universally unique identifiers (UUIDs).
-% Note that this is a wrapper around whatever UUID functionality the
-% underlying platform provides and not a Mercury implementation of them.
+% This module provides universally unique identifiers (UUIDs).
 %
 %---------------------------------------------------------------------------%
 
 :- module uuid.
 :- interface.
 
-:- import_module io.
+%:- import_module io.
 :- import_module list.
 
 %---------------------------------------------------------------------------%
 
     % A universally unique identifier (UUID).
     %
-    % In C grades the representation is as follows:
-    %   - For platforms that use libuuid it is a pointer to "uuid_t".
-    %   - On Windows it is a pointer to "UUID".
-    %
-    % In the Java grade the representation is a "java.util.UUID" object.
-    % In the C# grade the representation is a "System.Guid" object.
+    % For the Java backend the representation is a "java.util.UUID" object.
+    % For the C# backend the representation is a "System.Guid" object.
+    % For other backends UUIDs are represented using a Mercury type.
     %
     % Ordering on uuid/0 values is defined lexicographically on the
     % components of the UUID, arranged as follows:
     %
-    %     Bytes 1 - 4   : an unsigned 32-bit integer.
-    %     Bytes 5 - 6   : an unsigned 16-bit integer.
-    %     Bytes 7 - 8   : an unsigned 16-bit integer.
-    %     Bytes 9 - 10  : an unsigned 16-bit integer.
-    %     Bytes 11 - 16 : 6 unsigned 8-bit integers.
+    %     Octet 0 - 3   : an unsigned 32-bit integer.
+    %     Octet 4 - 5   : an unsigned 16-bit integer.
+    %     Octet 6 - 7   : an unsigned 16-bit integer.
+    %     Octet 8       : an unsigned 8-bit integer.
+    %     Octet 9       : an unsigned 8-bit integer.
+    %     Octet 10 - 15 : an unsigned 48-bit integer.
     %
     % Note that for the Java backend the above ordering differs from that
     % provided by the compareTo() method.
     %
 :- type uuid.
 
-    % generate(UUID, !IO):
-    % Randomly generate a UUID.
-    % Throws a software_error/1 exception if a UUID cannot be randomly
-    % generated.
+    % Return the nil (empty) UUID, which has all 128 bits set to zero.
     %
-:- pred generate(uuid::out, io::di, io::uo) is det.
+:- func nil_uuid = uuid.
 
     % to_string(UUID) = S:
     % S is the string representation of UUID.
@@ -77,31 +70,32 @@
     %
 :- func det_from_string(string) = uuid.
 
+    % A synonym for the above.
+    %
+:- func uuid(string) = uuid.
+
     % to_bytes(UUID) = Bytes:
     %
     % Bytes is a list of unsigned bytes in the UUID ordered from most
     % significant to least significant byte.
-    % The list of bytes is represented by list of ints, with each byte
-    % occupying the lower 8 bits of an int.
     %
-    % Note that the above ordering will be returned even on platforms where the
-    % underlying representation is the Microsoft one.
-    %
-:- func to_bytes(uuid) = list(int).
+:- func to_bytes(uuid) = list(uint8).
 
     % from_bytes(Bytes) = UUID:
     %
-    % Construct UUID from the list of unsigned bytes in Bytes.
-    % Each byte is represented using the lower 8 bits of each int with
-    % the remaining bits being ignored.
+    % Construct a UUID from the list of bytes in Bytes.
     % Bytes must be ordered from most significant to least significant byte.
-    %
-    % Note that the above ordering is used even on platforms where the
-    % underlying representation is the Microsoft one.
     %
     % Throws a software_error/1 exception if length(Bytes, 16) is false.
     %
-:- func from_bytes(list(int)) = uuid.
+:- func from_bytes(list(uint8)) = uuid.
+
+    % generate(UUID, !IO):
+    % Randomly generate a UUID.
+    % Throws a software_error/1 exception if a UUID cannot be randomly
+    % generated.
+    %
+%:- pred generate(uuid::out, io::di, io::uo) is det.
 
 %---------------------------------------------------------------------------%
 %---------------------------------------------------------------------------%
@@ -109,8 +103,14 @@
 :- implementation.
 
 :- import_module bool.
+:- import_module char.
+:- import_module int.
 :- import_module require.
 :- import_module string.
+:- import_module uint.
+:- import_module uint8.
+:- import_module uint16.
+:- import_module uint32.
 
 :- interface.
 
@@ -122,21 +122,20 @@
 
 %---------------------------------------------------------------------------%
 
-:- pragma foreign_decl("C", "
-#if defined(MR_WIN32) && !defined(MR_CYGWIN)
-    #include ""mercury_windows.h""
-    #include <Rpc.h>
-    typedef UUID MER_uuid;
-#else
-    #include <uuid/uuid.h>
-    typedef uuid_t MER_uuid;
-#endif
-
-").
-
-:- pragma foreign_type("C", uuid, "MER_uuid *", [can_pass_as_mercury_type])
-     where equality is uuid_equal,
-           comparison is uuid_compare.
+:- type uuid
+    --->    uuid(
+                time_low :: uint32,
+                time_mid :: uint16,
+                time_hi_and_version :: uint16,
+                clock_seq_hi_and_reserved :: uint8,
+                clock_seq_low :: uint8,
+                node0 :: uint8,     % Octet 10
+                node1 :: uint8,     % Octet 11
+                node2 :: uint8,     % Octet 12
+                node3 :: uint8,     % Octet 13
+                node4 :: uint8,     % Octet 14
+                node5 :: uint8      % Octet 15
+            ).
 
 :- pragma foreign_type("Java", uuid, "java.util.UUID")
     where equality is uuid_equal,
@@ -151,17 +150,10 @@
 % Equality.
 %
 
-:- pragma foreign_proc("C",
-    uuid_equal(A::in, B::in),
-    [will_not_call_mercury, promise_pure, thread_safe, will_not_modify_trail],
-"
-#if defined(MR_WIN32) && !defined(MR_CYGWIN)
-    RPC_STATUS status;
-    SUCCESS_INDICATOR = (UuidEqual(A, B, &status)) ? MR_TRUE : MR_FALSE;
-#else
-    SUCCESS_INDICATOR = (uuid_compare(*A, *B) == 0) ? MR_TRUE : MR_FALSE;
-#endif
-").
+:- pragma no_determinism_warning(uuid_equal/2).
+
+uuid_equal(_, _) :-
+    unexpected($pred, "uuid_equal for Mercury UUIDs").
 
 :- pragma foreign_proc("Java",
     uuid_equal(A::in, B::in),
@@ -182,25 +174,10 @@
 % Comparison.
 %
 
-:- pragma foreign_proc("C",
-    uuid_compare(R::uo, A::in, B::in),
-    [will_not_call_mercury, promise_pure, thread_safe, will_not_modify_trail],
-"
-    int r;
-#if defined(MR_WIN32) && !defined(MR_CYGWIN)
-    RPC_STATUS status;
-    r = UuidCompare(A, B, &status);
-#else
-    r = uuid_compare(*A, *B);
-#endif
-    if (r < 0) {
-        R = MR_COMPARE_LESS;
-    } else if (r > 0) {
-        R = MR_COMPARE_GREATER;
-    } else {
-        R = MR_COMPARE_EQUAL;
-    }
-").
+:- pragma no_determinism_warning(uuid_compare/3).
+
+uuid_compare(_, _, _) :-
+    unexpected($pred, "uuid_compare for Mercury UUIDs").
 
 :- pragma foreign_proc("Java",
     uuid_compare(R::uo, A::in, B::in),
@@ -301,10 +278,347 @@ public static builtin.Comparison_result_0 do_uuid_compare(
 ").
 
 %---------------------------------------------------------------------------%
+
+nil_uuid = uuid(0u32, 0u16, 0u16, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8).
+
+:- pragma foreign_proc("C#",
+    nil_uuid = (U::out),
+    [promise_pure, will_not_call_mercury, thread_safe],
+"
+    U = System.Guid.Empty;
+").
+
+:- pragma foreign_code("Java", "
+    public static final ML_NIL_UUID = new java.util.UUID(0L, 0L);
+").
+
+:- pragma foreign_proc("Java",
+    nil_uuid = (U::out),
+    [promise_pure, will_not_call_mercury, thread_safe],
+"
+    U = ML_NIL_UUID;
+").
+
+
+%---------------------------------------------------------------------------%
+%
+% Conversion to a string.
+%
+
+to_string(U) = S :-
+    string.format(
+        "%8.8x-%4.4x-%4.4x-%2.2x%2.2x-%2.2x%2.2x%2.2x%2.2x%2.2x%2.2x", [
+        u(cast_to_uint(U ^ time_low)),
+        u(cast_to_uint(U ^ time_mid)),
+        u(cast_to_uint(U ^ time_hi_and_version)),
+        u(cast_to_uint(U ^ clock_seq_hi_and_reserved)),
+        u(cast_to_uint(U ^ clock_seq_low)),
+        u(cast_to_uint(U ^ node0)),
+        u(cast_to_uint(U ^ node1)),
+        u(cast_to_uint(U ^ node2)),
+        u(cast_to_uint(U ^ node3)),
+        u(cast_to_uint(U ^ node4)),
+        u(cast_to_uint(U ^ node5))],
+        S).
+
+:- pragma foreign_proc("Java",
+    to_string(U::in) = (S::out),
+    [will_not_call_mercury, promise_pure, thread_safe],
+"
+    S = U.toString();
+").
+
+:- pragma foreign_proc("C#",
+    to_string(U::in) = (S::out),
+    [will_not_call_mercury, promise_pure, thread_safe],
+"
+    S = U.ToString();
+").
+
+%---------------------------------------------------------------------------%
+%
+% Conversion from a string.
+%
+
+from_string(S, U) :-
+    Components = string.split_at_char('-', S),
+    Components = [
+        TimeLowStr,
+        TimeMidStr,
+        TimeHiAndVersionStr,
+        ClockSeqStr,
+        NodeStr
+    ],
+
+    string.length(TimeLowStr, 8),
+    string.length(TimeMidStr, 4),
+    string.length(TimeHiAndVersionStr, 4),
+    string.length(ClockSeqStr, 4),
+    string.length(NodeStr, 12),
+
+    hex_string_to_uint(TimeLowStr, TimeLow),
+    hex_string_to_uint(TimeMidStr, TimeMid),
+    hex_string_to_uint(TimeHiAndVersionStr, TimeHiAndVersion),
+    octet_from_string(ClockSeqStr, 0, ClockSeqHiAndReserved),
+    octet_from_string(ClockSeqStr, 2, ClockSeqLo),
+    octet_from_string(NodeStr, 0, Node0),
+    octet_from_string(NodeStr, 2, Node1),
+    octet_from_string(NodeStr, 4, Node2),
+    octet_from_string(NodeStr, 6, Node3),
+    octet_from_string(NodeStr, 8, Node4),
+    octet_from_string(NodeStr, 10, Node5),
+
+    U = uuid(
+        uint32.cast_from_uint(TimeLow),
+        uint16.cast_from_int(uint.cast_to_int(TimeMid)),
+        uint16.cast_from_int(uint.cast_to_int(TimeHiAndVersion)),
+        ClockSeqHiAndReserved,
+        ClockSeqLo,
+        Node0,
+        Node1,
+        Node2,
+        Node3,
+        Node4,
+        Node5).
+
+:- pred hex_string_to_uint(string::in, uint::out) is semidet.
+
+hex_string_to_uint(S, U) :-
+    string.foldl(acc_hex_digits, S, 0u, U).
+
+:- pred acc_hex_digits(char::in, uint::in, uint::out) is semidet.
+
+acc_hex_digits(C, !Acc) :-
+    hex_digit_to_int(C, I),
+    !:Acc = !.Acc * 16u + cast_from_int(I).
+
+:- pred octet_from_string(string::in, int::in, uint8::out) is semidet.
+
+octet_from_string(S, I, U8) :-
+    % These lookups are safe since our caller has checked the
+    % length of S already.
+    HiDigit = S ^ unsafe_elem(I),
+    LoDigit = S ^ unsafe_elem(I + 1),
+    hex_digit_to_int(HiDigit, Hi),
+    hex_digit_to_int(LoDigit, Lo),
+    U8 = cast_from_int(Hi * 16 + Lo).
+
+:- pragma foreign_proc("Java",
+    from_string(S::in, U::out),
+    [will_not_call_mercury, promise_pure, thread_safe],
+"
+    try {
+        U = java.util.UUID.fromString(S);
+        SUCCESS_INDICATOR = true;
+    } catch (java.lang.IllegalArgumentException e) {
+        U = ML_NIL_UUID;
+        SUCCESS_INDICATOR = false;
+    }
+").
+
+:- pragma foreign_proc("C#",
+    from_string(S::in, U::out),
+    [will_not_call_mercury, promise_pure, thread_safe],
+"
+    // TryParse allows UUIDs with leading and trailing whitespace.
+    // For consistency with the other backends we do not want to allow
+    // this.
+    if (
+        S.Length > 0 &&
+        !System.Char.IsWhiteSpace(S[0]) &&
+        !System.Char.IsWhiteSpace(S[S.Length - 1]) &&
+        System.Guid.TryParseExact(S, \"D\", out U)
+    ) {
+        SUCCESS_INDICATOR = true;
+    } else {
+        U = System.Guid.Empty;
+        SUCCESS_INDICATOR = false;
+    }
+
+").
+
+det_from_string(S) =
+    ( if from_string(S, U)
+    then
+        U
+    else
+        func_error("uuid.det_from_string: string is not a UUID")
+    ).
+
+uuid(S) = det_from_string(S).
+
+%---------------------------------------------------------------------------%
+%
+% Conversion to byte list.
+%
+
+to_bytes(U) = Bytes :-
+    U = uuid(
+        TimeLow,
+        TimeMid,
+        TimeHiAndVersion,
+        ClockSeqHiAndReserved,
+        ClockSeqLow,
+        Node0,
+        Node1,
+        Node2,
+        Node3,
+        Node4,
+        Node5
+    ),
+    Bytes = [
+        uint32_byte(TimeLow, 3),
+        uint32_byte(TimeLow, 2),
+        uint32_byte(TimeLow, 1),
+        uint32_byte(TimeLow, 0),
+        uint16_byte(TimeMid, 1),
+        uint16_byte(TimeMid, 0),
+        uint16_byte(TimeHiAndVersion, 1),
+        uint16_byte(TimeHiAndVersion, 0),
+        ClockSeqHiAndReserved,
+        ClockSeqLow,
+        Node0,
+        Node1,
+        Node2,
+        Node3,
+        Node4,
+        Node5
+    ].
+
+:- func uint16_byte(uint16, int) = uint8.
+
+uint16_byte(U16, N) =
+    cast_from_int(cast_to_int((U16 >> (N * 8)) /\ 0xff_u16)).
+
+:- func uint32_byte(uint32, int) = uint8.
+
+uint32_byte(U32, N) =
+    cast_from_int(cast_to_int((U32 >> (N * 8)) /\ 0xff_u32)).
+
+:- pragma foreign_proc("Java",
+    to_bytes(U::in) = (Bs::out),
+    [will_not_call_mercury, promise_pure, thread_safe],
+"
+    Bs = list.empty_list();
+
+    long lsb = U.getLeastSignificantBits();
+    for (int s = 0; s <= 56; s += 8) {
+        Bs = list.cons((byte) ((lsb >>> s) & 0xff), Bs);
+    }
+
+    long msb = U.getMostSignificantBits();
+    for (int s = 0; s <= 56; s += 8) {
+        Bs = list.cons((byte) ((msb >>> s) & 0xff), Bs);
+    }
+").
+
+:- pragma foreign_proc("C#",
+    to_bytes(U::in) = (Bs::out),
+    [will_not_call_mercury, promise_pure, thread_safe],
+"
+    byte[] bytes = U.ToByteArray();
+    Bs = list.empty_list();
+    Bs = list.cons(bytes[15], Bs);
+    Bs = list.cons(bytes[14], Bs);
+    Bs = list.cons(bytes[13], Bs);
+    Bs = list.cons(bytes[12], Bs);
+    Bs = list.cons(bytes[11], Bs);
+    Bs = list.cons(bytes[10], Bs);
+
+    Bs = list.cons(bytes[9], Bs);
+    Bs = list.cons(bytes[8], Bs);
+
+    Bs = list.cons(bytes[6], Bs);
+    Bs = list.cons(bytes[7], Bs);
+
+    Bs = list.cons(bytes[4], Bs);
+    Bs = list.cons(bytes[5], Bs);
+
+    Bs = list.cons(bytes[0], Bs);
+    Bs = list.cons(bytes[1], Bs);
+    Bs = list.cons(bytes[2], Bs);
+    Bs = list.cons(bytes[3], Bs);
+").
+
+%---------------------------------------------------------------------------%
+
+from_bytes(Bytes) = UUID :-
+    list.length(Bytes, NumBytes),
+    ( if list.length(Bytes, 16) then
+        UUID = do_from_bytes(Bytes)
+    else
+        Msg = "from_bytes: expected 16 bytes; have " ++
+            int_to_string(NumBytes),
+        error(Msg)
+    ).
+
+:- func do_from_bytes(list(uint8)) = uuid.
+
+do_from_bytes(Bytes) = UUID :-
+    ( if
+        Bytes = [B0, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10, B11, B12, B13,
+            B14, B15]
+    then
+        UUID = uuid(
+            uint32.from_bytes_be(B0, B1, B2, B3),
+            uint16.from_bytes_be(B4, B5),
+            uint16.from_bytes_be(B6, B7),
+            B8,
+            B9,
+            B10,
+            B11,
+            B12,
+            B13,
+            B14,
+            B15
+        )
+    else
+        unexpected($pred, "expected 16 bytes")
+    ).
+
+:- pragma foreign_proc("Java",
+    do_from_bytes(Bs::in) = (U::out),
+    [will_not_call_mercury, promise_pure, thread_safe],
+"
+    long msb = 0;
+    for (int i = 0; i < 8; i++) {
+        msb = (msb << 8) + (list.det_head(Bs).byteValue() & 0xff);
+        Bs = list.det_tail(Bs);
+    }
+
+    long lsb = 0;
+    for (int i = 0; i < 8; i++) {
+        lsb = (lsb << 8) + (list.det_head(Bs).byteValue() & 0xff);
+        Bs = list.det_tail(Bs);
+    }
+
+    U = new java.util.UUID(msb, lsb);
+").
+
+:- pragma foreign_code("C#", "
+
+public static readonly byte[] bytes_to_set =
+    {3, 2, 1, 0, 5, 4, 7, 6, 8, 9, 10, 11, 12, 13, 14, 15};
+").
+
+:- pragma foreign_proc("C#",
+    do_from_bytes(Bs::in) = (U::out),
+    [will_not_call_mercury, promise_pure, thread_safe],
+"
+    byte[] bytes = new byte[16];
+    for (int i = 0; i < 16; i++) {
+        bytes[bytes_to_set[i]] = (byte) list.det_head(Bs);
+        Bs = list.det_tail(Bs);
+    }
+    U = new System.Guid(bytes);
+").
+
+%---------------------------------------------------------------------------%
 %
 % Random generation.
 %
 
+/*
 % XXX are these actually thread safe?
 
 generate(U, !IO) :-
@@ -352,309 +666,7 @@ generate(U, !IO) :-
     U = System.Guid.NewGuid();
     Res = mr_bool.YES;
 ").
-
-%---------------------------------------------------------------------------%
-%
-% Conversion to a string.
-%
-
-:- pragma foreign_proc("C",
-    to_string(U::in) = (S::out),
-    [will_not_call_mercury, promise_pure, thread_safe, will_not_modify_trail],
-"
-#if defined(MR_WIN32) && !defined(MR_CYGWIN)
-    RPC_STATUS res;
-    RPC_CSTR c_uuid = NULL;
-    S = MR_GC_malloc(sizeof(char) * 37);
-    res = UuidToString(U, &c_uuid);
-    if (res == RPC_S_OK) {
-        MR_make_aligned_string_copy(S, (const char *)c_uuid);
-        RpcStringFree(&c_uuid);
-    } else {
-        /* res == RCP_S_OUT_OF_MEMORY */
-        MR_external_fatal_error(""mercury_uuid"",
-            ""cannot allocate memory for UUID to string conversion"");
-    }
-#else
-    S = MR_GC_malloc(sizeof(char) * 37);
-    uuid_unparse_lower(*U, S);
-#endif
-").
-
-:- pragma foreign_proc("Java",
-    to_string(U::in) = (S::out),
-    [will_not_call_mercury, promise_pure, thread_safe],
-"
-    S = U.toString();
-").
-
-:- pragma foreign_proc("C#",
-    to_string(U::in) = (S::out),
-    [will_not_call_mercury, promise_pure, thread_safe],
-"
-    S = U.ToString();
-").
-
-%---------------------------------------------------------------------------%
-%
-% Conversion from a string.
-%
-
-:- pragma foreign_proc("C",
-    from_string(S::in, U::out),
-    [will_not_call_mercury, promise_pure, thread_safe, will_not_modify_trail],
-"
-#if defined(MR_WIN32) && !defined(MR_CYGWIN)
-    UUID u;
-    if (UuidFromString((unsigned char *)S, &u) == RPC_S_OK) {
-        U = MR_GC_malloc_atomic(sizeof(UUID));
-        MR_memcpy(U, &u, sizeof(UUID));
-        SUCCESS_INDICATOR = MR_TRUE;
-    } else {
-        SUCCESS_INDICATOR = MR_FALSE;
-    }
-#else
-    uuid_t u;
-    if (uuid_parse(S, u) == 0) {
-        U = MR_GC_malloc_atomic(sizeof(uuid_t));
-        MR_memcpy(U, u, sizeof(uuid_t));
-        SUCCESS_INDICATOR = MR_TRUE;
-    } else {
-        SUCCESS_INDICATOR = MR_FALSE;
-    }
-#endif
-").
-
-:- pragma foreign_proc("Java",
-    from_string(S::in, U::out),
-    [will_not_call_mercury, promise_pure, thread_safe],
-"
-    try {
-        U = java.util.UUID.fromString(S);
-        SUCCESS_INDICATOR = true;
-    } catch (java.lang.IllegalArgumentException e) {
-        U = new java.util.UUID(0, 0);  // Dummy value - XXX make static member.
-        SUCCESS_INDICATOR = false;
-    }
-").
-
-:- pragma foreign_proc("C#",
-    from_string(S::in, U::out),
-    [will_not_call_mercury, promise_pure, thread_safe],
-"
-    // TryParse allows UUIDs with leading and trailing whitespace.
-    // For consistency with the other backends we do not want to allow
-    // this.
-    if (
-        S.Length > 0 &&
-        !System.Char.IsWhiteSpace(S[0]) &&
-        !System.Char.IsWhiteSpace(S[S.Length - 1]) &&
-        System.Guid.TryParseExact(S, \"D\", out U)
-    ) {
-        SUCCESS_INDICATOR = true;
-    } else {
-        U = System.Guid.Empty;
-        SUCCESS_INDICATOR = false;
-    }
-
-").
-
-det_from_string(S) =
-    ( if from_string(S, U)
-    then
-        U
-    else
-        func_error("uuid.det_from_string: string is not a UUID")
-    ).
-
-%---------------------------------------------------------------------------%
-%
-% Conversion to byte list.
-%
-
-:- pragma foreign_proc("C",
-    to_bytes(U::in) = (Bs::out),
-    [will_not_call_mercury, promise_pure, thread_safe, will_not_modify_trail],
-"
-    Bs = MR_list_empty();
-#if defined(MR_WIN32) && !defined(MR_CYGWIN)
-
-    unsigned long data1 = U->Data1;
-    unsigned short data2 = U->Data2;
-    unsigned short data3 = U->Data3;
-
-    Bs = MR_list_cons(U->Data4[7], Bs);
-    Bs = MR_list_cons(U->Data4[6], Bs);
-    Bs = MR_list_cons(U->Data4[5], Bs);
-    Bs = MR_list_cons(U->Data4[4], Bs);
-    Bs = MR_list_cons(U->Data4[3], Bs);
-    Bs = MR_list_cons(U->Data4[2], Bs);
-
-    Bs = MR_list_cons(U->Data4[1], Bs);
-    Bs = MR_list_cons(U->Data4[0], Bs);
-
-    Bs = MR_list_cons(((unsigned char *) (&data3))[0], Bs);
-    Bs = MR_list_cons(((unsigned char *) (&data3))[1], Bs);
-
-    Bs = MR_list_cons(((unsigned char *) (&data2))[0], Bs);
-    Bs = MR_list_cons(((unsigned char *) (&data2))[1], Bs);
-
-    Bs = MR_list_cons(((unsigned char *) (&data1))[0], Bs);
-    Bs = MR_list_cons(((unsigned char *) (&data1))[1], Bs);
-    Bs = MR_list_cons(((unsigned char *) (&data1))[2], Bs);
-    Bs = MR_list_cons(((unsigned char *) (&data1))[3], Bs);
-
-#else
-    int i;
-    for (i = 15; i >= 0; i--) {
-        Bs = MR_list_cons((*U)[i], Bs);
-    }
-
-#endif
-").
-
-:- pragma foreign_proc("Java",
-    to_bytes(U::in) = (Bs::out),
-    [will_not_call_mercury, promise_pure, thread_safe],
-"
-    Bs = list.empty_list();
-
-    long lsb = U.getLeastSignificantBits();
-    for (int s = 0; s <= 56; s += 8) {
-        Bs = list.cons((int) ((byte) (lsb >>> s) & 0xff), Bs);
-    }
-
-    long msb = U.getMostSignificantBits();
-    for (int s = 0; s <= 56; s += 8) {
-        Bs = list.cons((int) ((byte) (msb >>> s) & 0xff), Bs);
-    }
-").
-
-:- pragma foreign_proc("C#",
-    to_bytes(U::in) = (Bs::out),
-    [will_not_call_mercury, promise_pure, thread_safe],
-"
-    byte[] bytes = U.ToByteArray();
-    Bs = list.empty_list();
-    Bs = list.cons((int) bytes[15], Bs);
-    Bs = list.cons((int) bytes[14], Bs);
-    Bs = list.cons((int) bytes[13], Bs);
-    Bs = list.cons((int) bytes[12], Bs);
-    Bs = list.cons((int) bytes[11], Bs);
-    Bs = list.cons((int) bytes[10], Bs);
-
-    Bs = list.cons((int) bytes[9], Bs);
-    Bs = list.cons((int) bytes[8], Bs);
-
-    Bs = list.cons((int) bytes[6], Bs);
-    Bs = list.cons((int) bytes[7], Bs);
-
-    Bs = list.cons((int) bytes[4], Bs);
-    Bs = list.cons((int) bytes[5], Bs);
-
-    Bs = list.cons((int) bytes[0], Bs);
-    Bs = list.cons((int) bytes[1], Bs);
-    Bs = list.cons((int) bytes[2], Bs);
-    Bs = list.cons((int) bytes[3], Bs);
-").
-
-%---------------------------------------------------------------------------%
-
-from_bytes(Bytes) = UUID :-
-    list.length(Bytes, NumBytes),
-    ( if list.length(Bytes, 16) then
-        UUID = do_from_bytes(Bytes)
-    else
-        Msg = "from_bytes: expected 16 bytes; have " ++
-            int_to_string(NumBytes),
-        error(Msg)
-    ).
-
-:- func do_from_bytes(list(int)) = uuid.
-
-:- pragma foreign_proc("C",
-    do_from_bytes(Bs::in) = (U::out),
-    [will_not_call_mercury, promise_pure, thread_safe, will_not_modify_trail],
-"
-#if defined(MR_WIN32) && !defined(MR_CYGWIN)
-
-    unsigned long data1 = 0;
-    unsigned short data2 = 0;
-    unsigned short data3 = 0;
-
-    U = MR_GC_malloc_atomic(sizeof(UUID));
-
-    for (int i = 3; i >= 0; i--) {
-        ((unsigned char *) (&data1))[i] = (unsigned char) MR_list_head(Bs);
-        Bs = MR_list_tail(Bs);
-    }
-    U->Data1 = data1;
-
-    ((unsigned char *) (&data2))[1] = (unsigned char) MR_list_head(Bs);
-    Bs = MR_list_tail(Bs);
-    ((unsigned char *) (&data2))[0] = (unsigned char) MR_list_head(Bs);
-    Bs = MR_list_tail(Bs);
-    U->Data2 = data2;
-
-    ((unsigned char *) (&data3))[1] = (unsigned char) MR_list_head(Bs);
-    Bs = MR_list_tail(Bs);
-    ((unsigned char *) (&data3))[0] = (unsigned char) MR_list_head(Bs);
-    Bs = MR_list_tail(Bs);
-    U->Data3 = data3;
-
-    for (int i = 0; i < 8; i++) {
-        U->Data4[i] = (unsigned char) MR_list_head(Bs);
-        Bs = MR_list_tail(Bs);
-    }
-
-#else
-
-    U = MR_GC_malloc_atomic(sizeof(uuid_t));
-    int i;
-    for (i = 0; i < 16; i++) {
-        (*U)[i] = MR_list_head(Bs);
-        Bs = MR_list_tail(Bs);
-    }
-
-#endif
-").
-
-:- pragma foreign_proc("Java",
-    do_from_bytes(Bs::in) = (U::out),
-    [will_not_call_mercury, promise_pure, thread_safe],
-"
-    long msb = 0;
-    for (int i = 0; i < 8; i++) {
-        msb = (msb << 8) + (list.det_head(Bs).byteValue() & 0xff);
-        Bs = list.det_tail(Bs);
-    }
-
-    long lsb = 0;
-    for (int i = 0; i < 8; i++) {
-        lsb = (lsb << 8) + (list.det_head(Bs).byteValue() & 0xff);
-        Bs = list.det_tail(Bs);
-    }
-
-    U = new java.util.UUID(msb, lsb);
-").
-
-:- pragma foreign_code("C#", "
-
-public static readonly byte[] bytes_to_set =
-    {3, 2, 1, 0, 5, 4, 7, 6, 8, 9, 10, 11, 12, 13, 14, 15};
-").
-
-:- pragma foreign_proc("C#",
-    do_from_bytes(Bs::in) = (U::out),
-    [will_not_call_mercury, promise_pure, thread_safe],
-"
-    byte[] bytes = new byte[16];
-    for (int i = 0; i < 16; i++) {
-        bytes[bytes_to_set[i]] = (byte) ((int) list.det_head(Bs));
-        Bs = list.det_tail(Bs);
-    }
-    U = new System.Guid(bytes);
-").
+*/
 
 %---------------------------------------------------------------------------%
 :- end_module uuid.

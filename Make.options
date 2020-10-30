@@ -2,13 +2,3 @@
 #
 MMC = mmc
 INSTALL_PREFIX = /usr/lib/mercury_uuid
-
-UNAME := $(shell uname)
-
-# On Windows (but not Cygwin) we also need to link againt the RPC library.
-#
-ifneq (,$(findstring MINGW,$(UNAME)))
-	FLAGS_FOR_RPCLIB = -lrpcrt4
-else
-	FLAGS_FOR_RCPLIB=
-endif
