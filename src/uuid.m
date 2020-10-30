@@ -1,7 +1,7 @@
 %---------------------------------------------------------------------------%
 % vim: ft=mercury ts=4 sw=4 et wm=0 tw=0
 %---------------------------------------------------------------------------%
-% Copyright (C) 2016, Julien Fischer.
+% Copyright (C) 2016, 2020 Julien Fischer.
 % See the file COPYING for license details.
 %
 % Author: Julien Fischer <juliensf@gmail.com>
@@ -221,8 +221,8 @@ public static builtin.Comparison_result_0 do_uuid_compare(
     long msbA = A.getMostSignificantBits();
     long msbB = B.getMostSignificantBits();
 
-    int time_lowA = (int)(msbA >>> 32);
-    int time_lowB = (int)(msbB >>> 32);
+    int time_lowA = (int) (msbA >>> 32);
+    int time_lowB = (int) (msbB >>> 32);
     if (time_lowA != time_lowB) {
         // Unsigned 32-bit comparison.
         if ((time_lowA & 0xffffffffL) > (time_lowB & 0xffffffffL)) {
@@ -232,8 +232,8 @@ public static builtin.Comparison_result_0 do_uuid_compare(
         }
     }
 
-    short time_midA = (short)((msbA & 0xffff0000) >>> 16);
-    short time_midB = (short)((msbB & 0xffff0000) >>> 16);
+    short time_midA = (short) ((msbA & 0xffff0000) >>> 16);
+    short time_midB = (short) ((msbB & 0xffff0000) >>> 16);
     if (time_midA != time_midB) {
         if ((time_midA & 0xffff) > (time_midB & 0xffff)) {
             return builtin.COMPARE_GREATER;
@@ -242,8 +242,8 @@ public static builtin.Comparison_result_0 do_uuid_compare(
         }
     }
 
-    short time_hi_and_versionA = (short)((msbA & 0xffff));
-    short time_hi_and_versionB = (short)((msbB & 0xffff));
+    short time_hi_and_versionA = (short) ((msbA & 0xffff));
+    short time_hi_and_versionB = (short) ((msbB & 0xffff));
     if (time_hi_and_versionA != time_hi_and_versionB) {
         // Unsigned 16-bit comparison.
         if (
@@ -259,8 +259,8 @@ public static builtin.Comparison_result_0 do_uuid_compare(
     long lsbA = A.getLeastSignificantBits();
     long lsbB = B.getLeastSignificantBits();
 
-    short clock_seqA = (short)(lsbA >>> 48);
-    short clock_seqB = (short)(lsbB >>> 48);
+    short clock_seqA = (short) (lsbA >>> 48);
+    short clock_seqB = (short) (lsbB >>> 48);
     if (clock_seqA != clock_seqB) {
         if ((clock_seqA & 0xffff) > (clock_seqB & 0xffff)) {
             return builtin.COMPARE_GREATER;
@@ -270,8 +270,8 @@ public static builtin.Comparison_result_0 do_uuid_compare(
     }
 
     for (int i = 40; i >= 0; i-=8) {
-        byte nodeA = (byte)((lsbA >>> i) & 0xff);
-        byte nodeB = (byte)((lsbB >>> i) & 0xff);
+        byte nodeA = (byte) ((lsbA >>> i) & 0xff);
+        byte nodeB = (byte) ((lsbB >>> i) & 0xff);
         if (nodeA != nodeB) {
             if ((nodeA & 0xff) > (nodeB & 0xff)) {
                 return builtin.COMPARE_GREATER;
@@ -306,7 +306,6 @@ public static builtin.Comparison_result_0 do_uuid_compare(
 %
 
 % XXX are these actually thread safe?
-
 
 generate(U, !IO) :-
     do_generate(U, Ok, !IO),
@@ -462,8 +461,10 @@ generate(U, !IO) :-
 
 det_from_string(S) =
     ( if from_string(S, U)
-    then U
-    else func_error("uuid.det_from_string: string is not a UUID")
+    then
+        U
+    else
+        func_error("uuid.det_from_string: string is not a UUID")
     ).
 
 %---------------------------------------------------------------------------%
@@ -492,20 +493,20 @@ det_from_string(S) =
     Bs = MR_list_cons(U->Data4[1], Bs);
     Bs = MR_list_cons(U->Data4[0], Bs);
 
-    Bs = MR_list_cons(((unsigned char *)(&data3))[0], Bs);
-    Bs = MR_list_cons(((unsigned char *)(&data3))[1], Bs);
+    Bs = MR_list_cons(((unsigned char *) (&data3))[0], Bs);
+    Bs = MR_list_cons(((unsigned char *) (&data3))[1], Bs);
 
-    Bs = MR_list_cons(((unsigned char *)(&data2))[0], Bs);
-    Bs = MR_list_cons(((unsigned char *)(&data2))[1], Bs);
+    Bs = MR_list_cons(((unsigned char *) (&data2))[0], Bs);
+    Bs = MR_list_cons(((unsigned char *) (&data2))[1], Bs);
 
-    Bs = MR_list_cons(((unsigned char *)(&data1))[0], Bs);
-    Bs = MR_list_cons(((unsigned char *)(&data1))[1], Bs);
-    Bs = MR_list_cons(((unsigned char *)(&data1))[2], Bs);
-    Bs = MR_list_cons(((unsigned char *)(&data1))[3], Bs);
+    Bs = MR_list_cons(((unsigned char *) (&data1))[0], Bs);
+    Bs = MR_list_cons(((unsigned char *) (&data1))[1], Bs);
+    Bs = MR_list_cons(((unsigned char *) (&data1))[2], Bs);
+    Bs = MR_list_cons(((unsigned char *) (&data1))[3], Bs);
 
 #else
-
-    for (int i = 15; i >= 0; i--) {
+    int i;
+    for (i = 15; i >= 0; i--) {
         Bs = MR_list_cons((*U)[i], Bs);
     }
 
@@ -519,13 +520,13 @@ det_from_string(S) =
     Bs = list.empty_list();
 
     long lsb = U.getLeastSignificantBits();
-    for (int s = 0; s <= 56; s+=8) {
-        Bs = list.cons((int)((byte)(lsb >>> s) & 0xff), Bs);
+    for (int s = 0; s <= 56; s += 8) {
+        Bs = list.cons((int) ((byte) (lsb >>> s) & 0xff), Bs);
     }
 
     long msb = U.getMostSignificantBits();
-    for (int s = 0; s <= 56; s+=8) {
-        Bs = list.cons((int)((byte)(msb >>> s) & 0xff), Bs);
+    for (int s = 0; s <= 56; s += 8) {
+        Bs = list.cons((int) ((byte) (msb >>> s) & 0xff), Bs);
     }
 ").
 
@@ -535,26 +536,26 @@ det_from_string(S) =
 "
     byte[] bytes = U.ToByteArray();
     Bs = list.empty_list();
-    Bs = list.cons((int)bytes[15], Bs);
-    Bs = list.cons((int)bytes[14], Bs);
-    Bs = list.cons((int)bytes[13], Bs);
-    Bs = list.cons((int)bytes[12], Bs);
-    Bs = list.cons((int)bytes[11], Bs);
-    Bs = list.cons((int)bytes[10], Bs);
+    Bs = list.cons((int) bytes[15], Bs);
+    Bs = list.cons((int) bytes[14], Bs);
+    Bs = list.cons((int) bytes[13], Bs);
+    Bs = list.cons((int) bytes[12], Bs);
+    Bs = list.cons((int) bytes[11], Bs);
+    Bs = list.cons((int) bytes[10], Bs);
 
-    Bs = list.cons((int)bytes[9], Bs);
-    Bs = list.cons((int)bytes[8], Bs);
+    Bs = list.cons((int) bytes[9], Bs);
+    Bs = list.cons((int) bytes[8], Bs);
 
-    Bs = list.cons((int)bytes[6], Bs);
-    Bs = list.cons((int)bytes[7], Bs);
+    Bs = list.cons((int) bytes[6], Bs);
+    Bs = list.cons((int) bytes[7], Bs);
 
-    Bs = list.cons((int)bytes[4], Bs);
-    Bs = list.cons((int)bytes[5], Bs);
+    Bs = list.cons((int) bytes[4], Bs);
+    Bs = list.cons((int) bytes[5], Bs);
 
-    Bs = list.cons((int)bytes[0], Bs);
-    Bs = list.cons((int)bytes[1], Bs);
-    Bs = list.cons((int)bytes[2], Bs);
-    Bs = list.cons((int)bytes[3], Bs);
+    Bs = list.cons((int) bytes[0], Bs);
+    Bs = list.cons((int) bytes[1], Bs);
+    Bs = list.cons((int) bytes[2], Bs);
+    Bs = list.cons((int) bytes[3], Bs);
 ").
 
 %---------------------------------------------------------------------------%
@@ -584,20 +585,20 @@ from_bytes(Bytes) = UUID :-
     U = MR_GC_malloc_atomic(sizeof(UUID));
 
     for (int i = 3; i >= 0; i--) {
-        ((unsigned char *)(&data1))[i] = (unsigned char) MR_list_head(Bs);
+        ((unsigned char *) (&data1))[i] = (unsigned char) MR_list_head(Bs);
         Bs = MR_list_tail(Bs);
     }
     U->Data1 = data1;
 
-    ((unsigned char *)(&data2))[1] = (unsigned char) MR_list_head(Bs);
+    ((unsigned char *) (&data2))[1] = (unsigned char) MR_list_head(Bs);
     Bs = MR_list_tail(Bs);
-    ((unsigned char *)(&data2))[0] = (unsigned char) MR_list_head(Bs);
+    ((unsigned char *) (&data2))[0] = (unsigned char) MR_list_head(Bs);
     Bs = MR_list_tail(Bs);
     U->Data2 = data2;
 
-    ((unsigned char *)(&data3))[1] = (unsigned char) MR_list_head(Bs);
+    ((unsigned char *) (&data3))[1] = (unsigned char) MR_list_head(Bs);
     Bs = MR_list_tail(Bs);
-    ((unsigned char *)(&data3))[0] = (unsigned char) MR_list_head(Bs);
+    ((unsigned char *) (&data3))[0] = (unsigned char) MR_list_head(Bs);
     Bs = MR_list_tail(Bs);
     U->Data3 = data3;
 
@@ -609,7 +610,8 @@ from_bytes(Bytes) = UUID :-
 #else
 
     U = MR_GC_malloc_atomic(sizeof(uuid_t));
-    for (int i = 0; i < 16; i++) {
+    int i;
+    for (i = 0; i < 16; i++) {
         (*U)[i] = MR_list_head(Bs);
         Bs = MR_list_tail(Bs);
     }
@@ -648,7 +650,7 @@ public static readonly byte[] bytes_to_set =
 "
     byte[] bytes = new byte[16];
     for (int i = 0; i < 16; i++) {
-        bytes[bytes_to_set[i]] = (byte)((int)list.det_head(Bs));
+        bytes[bytes_to_set[i]] = (byte) ((int) list.det_head(Bs));
         Bs = list.det_tail(Bs);
     }
     U = new System.Guid(bytes);
