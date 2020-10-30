@@ -43,6 +43,10 @@
     %
 :- func nil_uuid = uuid.
 
+:- func version(uuid) = int.
+
+:- func variant(uuid) = int.
+
     % to_string(UUID) = S:
     % S is the string representation of UUID.
     % S will have the form:
@@ -306,6 +310,53 @@ nil_uuid = uuid(0u32, 0u16, 0u16, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8).
     U = ML_NIL_UUID;
 ").
 
+%---------------------------------------------------------------------------%
+
+version(U) =
+    cast_to_int((U ^ time_hi_and_version >> 12) /\ 0xf_u16).
+
+:- pragma foreign_proc("C#",
+    version(U::in) = (Version::out),
+    [will_not_call_mercury, promise_pure, thread_safe],
+"
+    byte[] bytes = U.ToByteArray();
+    // The version is in the most significant 4 bits of the
+    // the timestamp.
+    Version = (bytes[7] >> 4) & 0xf;
+").
+
+:- pragma foreign_proc("Java",
+    version(U::in) = (Version::out),
+    [will_not_call_mercury, promise_pure, thread_safe],
+"
+    Version = U.version();
+").
+
+variant(U) = Variant :-
+    ClockSeq = U ^ clock_seq_hi_and_reserved,
+    ( if ClockSeq /\ 0x80_u8 = 0u8 then
+        Variant = 0   % NCS
+    else if ClockSeq /\ 0x40_u8 = 0u8 then
+        Variant = 2
+    else if ClockSeq /\ 0x20_u8 = 0u8 then
+        Variant = 6
+    else
+        Variant = 7
+    ).
+
+:- pragma foreign_proc("C#",
+    variant(_U::in) = (Variant::out),
+    [will_not_call_mercury, promise_pure, thread_safe],
+"
+    Variant = 0;
+").
+
+:- pragma foreign_proc("Java",
+    variant(U::in) = (Variant::out),
+    [will_not_call_mercury, promise_pure, thread_safe],
+"
+    Variant = U.variant();
+").
 
 %---------------------------------------------------------------------------%
 %

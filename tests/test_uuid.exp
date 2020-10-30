@@ -1,20 +1,27 @@
 === Testing random generation ===
-9767124a-fda2-4b95-bf8d-3bb54054c68f
-4c8222cf-b9bf-487d-b456-bbe391805d89
-a8d14cf9-1652-4682-a963-d8853acdda8b
-0d74aa53-ea12-4c0a-a2fc-33114ccc4eea
-e6a215a8-5c08-4f3f-8a39-dbd56d336013
-03c192f2-f076-4d4c-9869-04b533eb544c
-c6aa67fd-7a21-45cc-b966-bc7eaeaf4aa6
-670ba45c-f328-4898-8fc6-ef8adf0bfab1
-4dcc0b9e-861a-41d1-a28f-1e249952dd09
-04bbebf0-6824-4dd1-a490-95b23df765fd
-2bf15a58-98b2-4647-b37e-12de61d418b1
-141b5f18-3401-41b6-8cd3-5b5b9d8c3d17
-324648fe-e628-4b4b-bcfc-18f30f245041
-d2e53310-7d84-42bd-8df1-aea36c51d9e6
-b0da7cdf-e7be-48fa-b822-8fd8ec2d1cc8
-27f805b1-efe6-43df-b1da-32ebb8b880c4
+9767124a-fda2-4b95-bf8d-3bb54054c68f (version: 4, variant: 2)
+4c8222cf-b9bf-487d-b456-bbe391805d89 (version: 4, variant: 2)
+a8d14cf9-1652-4682-a963-d8853acdda8b (version: 4, variant: 2)
+0d74aa53-ea12-4c0a-a2fc-33114ccc4eea (version: 4, variant: 2)
+e6a215a8-5c08-4f3f-8a39-dbd56d336013 (version: 4, variant: 2)
+03c192f2-f076-4d4c-9869-04b533eb544c (version: 4, variant: 2)
+c6aa67fd-7a21-45cc-b966-bc7eaeaf4aa6 (version: 4, variant: 2)
+670ba45c-f328-4898-8fc6-ef8adf0bfab1 (version: 4, variant: 2)
+4dcc0b9e-861a-41d1-a28f-1e249952dd09 (version: 4, variant: 2)
+04bbebf0-6824-4dd1-a490-95b23df765fd (version: 4, variant: 2)
+2bf15a58-98b2-4647-b37e-12de61d418b1 (version: 4, variant: 2)
+141b5f18-3401-41b6-8cd3-5b5b9d8c3d17 (version: 4, variant: 2)
+324648fe-e628-4b4b-bcfc-18f30f245041 (version: 4, variant: 2)
+d2e53310-7d84-42bd-8df1-aea36c51d9e6 (version: 4, variant: 2)
+b0da7cdf-e7be-48fa-b822-8fd8ec2d1cc8 (version: 4, variant: 2)
+27f805b1-efe6-43df-b1da-32ebb8b880c4 (version: 4, variant: 2)
+
+=== Testing version ==
+b9789c58-1ac2-11eb-b1ac-0231668a1f2a (version: 1)
+000001f5-5e9a-21ea-9e00-0242ac130003 (version: 2)
+cea59c91-c0cd-33af-bee3-a799ddaba88c (version: 3)
+2b397df2-0809-412c-907d-c5bd26df775f (version: 4)
+7688ece8-8e50-5bfa-ac80-26bb3da00d61 (version: 5)
 
 === Testing conversion from string ===
 from_string("1ec503ab-1038-4123-bfe0-2619e881d172") ==> TRUE

@@ -29,6 +29,9 @@ main(!IO) :-
     io.write_string("=== Testing random generation ===\n", !IO),
     test_random_generation(16, !IO),
     io.nl(!IO),
+    io.write_string("=== Testing version ==\n", !IO),
+    list.foldl(test_version, version_uuids, !IO),
+    io.nl(!IO),
     io.write_string("=== Testing conversion from string ===\n", !IO),
     list.foldl(test_from_string, test_strings, !IO),
     io.nl(!IO),
@@ -60,7 +63,8 @@ test_random_generation(I, !IO):-
 do_test_random_generation(RNG, I, !State, !IO) :-
     ( if I > 0 then
         random_uuid(RNG, UUID, !State),
-        io.print_line(to_string(UUID), !IO),
+        io.format("%s (version: %d, variant: %d)\n",
+            [s(to_string(UUID)), i(version(UUID)), i(variant(UUID))], !IO),
         do_test_random_generation(RNG, I - 1, !State, !IO)
     else
         true
@@ -150,6 +154,13 @@ test_from_bytes(Bytes, !IO) :-
 
 %---------------------------------------------------------------------------%
 
+:- pred test_version(uuid::in, io::di, io::uo) is det.
+
+test_version(U, !IO) :-
+    io.format("%s (version: %d)\n", [s(to_string(U)), i(version(U))], !IO).
+
+%---------------------------------------------------------------------------%
+
 :- func test_uuids = list(uuid).
 
 test_uuids = [
@@ -160,6 +171,18 @@ test_uuids = [
     uuid("bab2a57f-397a-47e0-9d01-ebc3820e896b"),
     uuid("ffffffff-ffff-ffff-ffff-ffff11111111"),
     uuid("ffffffff-ffff-ffff-ffff-ffff22222222")
+].
+
+%---------------------------------------------------------------------------%
+
+:- func version_uuids = list(uuid).
+
+version_uuids = [
+    uuid("b9789c58-1ac2-11eb-b1ac-0231668a1f2a"),  % Time-based       (v1)
+    uuid("000001f5-5e9a-21ea-9e00-0242ac130003"),  % DEC security     (v2)
+    uuid("cea59c91-c0cd-33af-bee3-a799ddaba88c"),  % Name-based MD5   (v3)
+    uuid("2b397df2-0809-412c-907d-c5bd26df775f"),  % Random           (v4)
+    uuid("7688ece8-8e50-5bfa-ac80-26bb3da00d61")   % Name-based SHA-1 (v5)
 ].
 
 %---------------------------------------------------------------------------%
