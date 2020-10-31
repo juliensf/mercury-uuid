@@ -13,6 +13,7 @@
 :- module uuid.
 :- interface.
 
+:- import_module io.
 :- import_module list.
 :- import_module random.
 
@@ -112,7 +113,13 @@
     %
 :- func from_bytes(list(uint8)) = uuid.
 
-    % generate(RNG, UUID, !State):
+    % random_uuid(UUID, !IO):
+    %
+    % Generate a type 4 UUID.
+    %
+:- pred random_uuid(uuid::out, io::di, io::uo) is det.
+
+    % random_uuid(RNG, UUID, !State):
     %
     % Generate a type 4 UUID using bytes supplied by the given random number
     % generator.
@@ -706,30 +713,105 @@ public static readonly byte[] bytes_to_set =
 % Random generation.
 %
 
-random_uuid(RNG, UUID, !State) :-
-    some [!ByteArray] (
-        array.generate_foldl(16, generate_byte(RNG), !:ByteArray, !State),
-        some [!B6] (
-            array.unsafe_lookup(!.ByteArray, 6, !:B6),
-            !:B6 = !.B6 /\ 0x0f_u8,  % Clear version.
-            !:B6 = !.B6 \/ 0x40_u8,  % Set to version 4 (randomly generated).
-            array.unsafe_set(6, !.B6, !ByteArray)
-        ),
-        some [!B8] (
-            array.unsafe_lookup(!.ByteArray, 8, !:B8),
-            !:B8 = !.B8 /\ 0x3f_u8,  % Clear variant.
-            !:B8 = !.B8 \/ 0x80_u8,  % Set to IETF variant.
-            array.unsafe_set(8, !.B8, !ByteArray)
-        ),
-        Bytes = array.to_list(!.ByteArray),
-        UUID = from_bytes(Bytes)
+random_uuid(UUID, !IO) :-
+    array.init(16, 0u8, Array0),
+    get_random_bytes(Array0, Array, IsOk, ErrorMsg, !IO),
+    (
+        IsOk = yes,
+        do_create_version_4_uuid(Array, UUID)
+    ;
+        IsOk = no,
+        error(ErrorMsg)
     ).
+
+:- pragma foreign_proc("C#",
+    random_uuid(U::uo, _IO0::di, _IO::uo),
+    [will_not_call_mercury, promise_pure, thread_safe],
+"
+    U = System.Guid.NewGuid();
+").
+
+:- pragma foreign_proc("Java",
+    random_uuid(U::uo, _IO0::di, _IO::uo),
+    [will_not_call_mercury, promise_pure, thread_safe],
+"
+    U = java.util.UUID.randomUUID();
+").
+
+%---------------------------------------------------------------------------%
+
+:- pragma foreign_decl("C", "#include ""mercury_types.h""").
+
+:- pred get_random_bytes(array(uint8)::array_di, array(uint8)::array_uo,
+    bool::out, string::out, io::di, io::uo) is det.
+
+:- pragma foreign_proc("C",
+    get_random_bytes(Array0::array_di, Array::array_uo, IsOk::out,
+        ErrorMsg::out, _IO0::di, _IO::uo),
+    [will_not_call_mercury, promise_pure, thread_safe, tabled_for_io],
+"
+    Array = Array0;
+
+    // A very rudimentary implementation using /dev/urandom.
+
+    unsigned char buffer[16];
+
+    int fd = open(""/dev/urandom"", O_RDONLY);
+    if (fd == -1) {
+        IsOk = MR_NO;
+        ErrorMsg = MR_make_string_const(""Cannot open /dev/urandom"");
+    } else {
+        ssize_t num_read = read(fd, buffer, 16);
+        if (num_read != 16) {
+            IsOk = MR_NO;
+            ErrorMsg = MR_make_string_const(""Cannot read 16 bytes"");
+        } else {
+            int i;
+            for (i = 0; i < 16; i++) {
+                Array->elements[i] = buffer[i];
+            }
+            IsOk = MR_YES;
+            ErrorMsg = MR_make_string_const("""");
+        }
+        close(fd);
+    }
+").
+
+get_random_bytes(_, _, _, _, _, _) :-
+    unexpected($pred, "call to get_random_bytes/6 on non-C backend").
+
+%---------------------------------------------------------------------------%
+%
+% Random generation with user-specified RNG.
+%
+
+random_uuid(RNG, UUID, !State) :-
+    array.generate_foldl(16, generate_byte(RNG), ByteArray, !State),
+    do_create_version_4_uuid(ByteArray, UUID).
 
 :- pred generate_byte(RNG::in, int::in, uint8::out, State::di, State::uo)
     is det <= urandom(RNG, State).
 
 generate_byte(RNG, _, Byte, !State) :-
     random.generate_uint8(RNG, Byte, !State).
+
+:- pred do_create_version_4_uuid(array(uint8)::array_di, uuid::out) is det.
+
+do_create_version_4_uuid(!.ByteArray, UUID) :-
+    some [!B6] (
+        array.unsafe_lookup(!.ByteArray, 6, !:B6),
+        !:B6 = !.B6 /\ 0x0f_u8,  % Clear version.
+        !:B6 = !.B6 \/ 0x40_u8,  % Set to version 4 (randomly generated).
+        array.unsafe_set(6, !.B6, !ByteArray)
+    ),
+    some [!B8] (
+        array.unsafe_lookup(!.ByteArray, 8, !:B8),
+        !:B8 = !.B8 /\ 0x3f_u8,  % Clear variant.
+        !:B8 = !.B8 \/ 0x80_u8,  % Set to IETF variant.
+        array.unsafe_set(8, !.B8, !ByteArray)
+    ),
+    Bytes = array.to_list(!.ByteArray),
+    UUID = from_bytes(Bytes).
 
 %---------------------------------------------------------------------------%
 :- end_module uuid.
