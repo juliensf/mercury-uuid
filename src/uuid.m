@@ -751,10 +751,28 @@ random_uuid(UUID, !IO) :-
     [will_not_call_mercury, promise_pure, thread_safe, tabled_for_io],
 "
     Array = Array0;
+    unsigned char buffer[16];
+
+#if defined(MR_WIN32)
+
+    IsOk = MR_NO;
+    ErrorMsg = MR_make_string_const(""No source of random bytes on Windows"");
+
+#elif defined(MR_MAC_OSX) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__FreeBSD__)
+
+    // Use arc4random_buf on systems that support it.
+
+    arc4random_buf(buffer, 16);
+    int i;
+    for (i = 0; i < 16; i++) {
+        Array->elements[i] = buffer[i];
+    }
+    IsOk = MR_YES;
+    ErrorMsg = MR_make_string_const("""");
+
+#else
 
     // A very rudimentary implementation using /dev/urandom.
-
-    unsigned char buffer[16];
 
     int fd = open(""/dev/urandom"", O_RDONLY);
     if (fd == -1) {
@@ -775,6 +793,8 @@ random_uuid(UUID, !IO) :-
         }
         close(fd);
     }
+
+#endif
 ").
 
 get_random_bytes(_, _, _, _, _, _) :-
