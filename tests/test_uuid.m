@@ -157,7 +157,8 @@ test_from_bytes(Bytes, !IO) :-
 :- pred test_version(uuid::in, io::di, io::uo) is det.
 
 test_version(U, !IO) :-
-    io.format("%s (version: %d)\n", [s(to_string(U)), i(version(U))], !IO).
+    io.format("%s (version: %d, variant: %d)\n",
+        [s(to_string(U)), i(version(U)), i(variant(U))], !IO).
 
 %---------------------------------------------------------------------------%
 
@@ -182,7 +183,44 @@ version_uuids = [
     uuid("000001f5-5e9a-21ea-9e00-0242ac130003"),  % DEC security     (v2)
     uuid("cea59c91-c0cd-33af-bee3-a799ddaba88c"),  % Name-based MD5   (v3)
     uuid("2b397df2-0809-412c-907d-c5bd26df775f"),  % Random           (v4)
-    uuid("7688ece8-8e50-5bfa-ac80-26bb3da00d61")   % Name-based SHA-1 (v5)
+    uuid("7688ece8-8e50-5bfa-ac80-26bb3da00d61"),  % Name-based SHA-1 (v5)
+
+    % The following are taken from the libuuid test suite.
+    % (https://github.com/karelzak/util-linux/blob/master/tests/expected/uuid/uuidparse)
+
+                                                   % Variant Version
+    uuid("00000000-0000-0000-0000-000000000000"),  % NCS     nil
+    uuid("00000000-0000-1000-0000-000000000000"),  % NCS     time-based
+    uuid("00000000-0000-2000-0000-000000000000"),  % NCS     DCE
+    uuid("00000000-0000-3000-0000-000000000000"),  % NCS     name-based
+    uuid("00000000-0000-4000-0000-000000000000"),  % NCS     random
+    uuid("00000000-0000-5000-0000-000000000000"),  % NCS     sha1-based
+    uuid("00000000-0000-6000-0000-000000000000"),  % NCS     unknown
+
+    uuid("00000000-0000-0000-8000-000000000000"),  % DCE     unknown
+    uuid("00000000-0000-2000-8000-000000000000"),  % DCE     DCE
+    uuid("00000000-0000-3000-8000-000000000000"),  % DCE     name-based
+    uuid("00000000-0000-4000-8000-000000000000"),  % DCE     random
+    uuid("00000000-0000-5000-8000-000000000000"),  % DCE     sha1-based
+    uuid("00000000-0000-6000-8000-000000000000"),  % DCE     unknown
+
+    uuid("00000000-0000-0000-d000-000000000000"),  % Microsoft unknown
+    uuid("00000000-0000-1000-d000-000000000000"),  % Microsoft time-based
+    uuid("00000000-0000-2000-d000-000000000000"),  % Microsoft DCE
+    uuid("00000000-0000-3000-d000-000000000000"),  % Microsoft named-based
+    uuid("00000000-0000-4000-d000-000000000000"),  % Microsoft random
+    uuid("00000000-0000-5000-d000-000000000000"),  % Microsoft sha1-based
+    uuid("00000000-0000-6000-d000-000000000000"),  % Microsoft unknown
+
+    uuid("00000000-0000-0000-f000-000000000000"),  % Other unknown
+    uuid("00000000-0000-1000-f000-000000000000"),  % Other time-based
+    uuid("00000000-0000-2000-f000-000000000000"),  % Other DCE
+    uuid("00000000-0000-3000-f000-000000000000"),  % Other name-based
+    uuid("00000000-0000-4000-f000-000000000000"),  % Other random
+    uuid("00000000-0000-5000-f000-000000000000"),  % Other sha1-based
+    uuid("00000000-0000-6000-f000-000000000000"),  % Other unknown
+
+    uuid("9b274c46-544a-11e7-a972-00037f500001")   % DCE time-based
 ].
 
 %---------------------------------------------------------------------------%

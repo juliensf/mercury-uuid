@@ -35,16 +35,34 @@
     %     Octet 10 - 15 : an unsigned 48-bit integer.
     %
     % Note that for the Java backend the above ordering differs from that
-    % provided by the compareTo() method.
+    % provided by the Java's compareTo() method.
     %
 :- type uuid.
 
-    % Return the nil (empty) UUID, which has all 128 bits set to zero.
+    % Return the nil (empty) UUID.
+    % This is a UUID where all 128 bits are set to zero.
     %
 :- func nil_uuid = uuid.
 
+    % Return the version number associated with the UUID.
+    % The version number describes how the UUID was generated.
+    %
+    %     1 - Time-based UUID.
+    %     2 - DCE Security based UUID.
+    %     3 - Named-based based UUID generated using MD5 hash.
+    %     4 - Randomly generated UUID.
+    %     5 - Name-based UUID generated using SHA1 hash.
+    %
 :- func version(uuid) = int.
 
+    % Return the variant number associated with the UUID.
+    % The variant number describes the layout of the UUID.
+    %
+    %    0 - Reserved, NCS backwards compatibility.
+    %    2 - IETF RFC 4122.
+    %    6 - Reserved, Microsoft Corporation backwards compatibility.
+    %    7 - Reserved for future definition.
+    %
 :- func variant(uuid) = int.
 
     % to_string(UUID) = S:
@@ -332,10 +350,12 @@ version(U) =
     Version = U.version();
 ").
 
+%---------------------------------------------------------------------------%
+
 variant(U) = Variant :-
     ClockSeq = U ^ clock_seq_hi_and_reserved,
     ( if ClockSeq /\ 0x80_u8 = 0u8 then
-        Variant = 0   % NCS
+        Variant = 0
     else if ClockSeq /\ 0x40_u8 = 0u8 then
         Variant = 2
     else if ClockSeq /\ 0x20_u8 = 0u8 then
@@ -345,10 +365,20 @@ variant(U) = Variant :-
     ).
 
 :- pragma foreign_proc("C#",
-    variant(_U::in) = (Variant::out),
+    variant(U::in) = (Variant::out),
     [will_not_call_mercury, promise_pure, thread_safe],
 "
-    Variant = 0;
+    byte[] bytes = U.ToByteArray();
+    byte clock_seq_hi = bytes[8];
+    if ((clock_seq_hi & 0x80) == 0) {
+        Variant = 0;
+    } else if ((clock_seq_hi & 0x40) == 0) {
+        Variant = 2;
+    } else if ((clock_seq_hi & 0x20) == 0) {
+        Variant = 6;
+    } else {
+        Variant = 7;
+    }
 ").
 
 :- pragma foreign_proc("Java",
