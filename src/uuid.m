@@ -140,6 +140,8 @@
 :- import_module bool.
 :- import_module char.
 :- import_module int.
+:- import_module maybe.
+:- import_module random.system_rng.
 :- import_module require.
 :- import_module string.
 :- import_module uint.
@@ -714,96 +716,31 @@ public static readonly byte[] bytes_to_set =
 %
 
 random_uuid(UUID, !IO) :-
-    array.init(16, 0u8, Array0),
-    get_random_bytes(Array0, Array, IsOk, ErrorMsg, !IO),
+    open_system_rng(MaybeRNG, !IO),
     (
-        IsOk = yes,
-        do_create_version_4_uuid(Array, UUID)
+        MaybeRNG = ok(RNG),
+        random_uuid(RNG, UUID, !IO),
+        close_system_rng(RNG, !IO)
     ;
-        IsOk = no,
+        MaybeRNG = error(ErrorMsg),
         error(ErrorMsg)
     ).
 
 :- pragma foreign_proc("C#",
-    random_uuid(U::uo, _IO0::di, _IO::uo),
+    random_uuid(U::out, _IO0::di, _IO::uo),
     [will_not_call_mercury, promise_pure, thread_safe],
 "
     U = System.Guid.NewGuid();
 ").
 
 :- pragma foreign_proc("Java",
-    random_uuid(U::uo, _IO0::di, _IO::uo),
+    random_uuid(U::out, _IO0::di, _IO::uo),
     [will_not_call_mercury, promise_pure, thread_safe],
 "
     U = java.util.UUID.randomUUID();
 ").
 
 %---------------------------------------------------------------------------%
-
-:- pragma foreign_decl("C", "#include ""mercury_types.h""").
-
-:- pred get_random_bytes(array(uint8)::array_di, array(uint8)::array_uo,
-    bool::out, string::out, io::di, io::uo) is det.
-
-:- pragma foreign_proc("C",
-    get_random_bytes(Array0::array_di, Array::array_uo, IsOk::out,
-        ErrorMsg::out, _IO0::di, _IO::uo),
-    [will_not_call_mercury, promise_pure, thread_safe, tabled_for_io],
-"
-    Array = Array0;
-    unsigned char buffer[16];
-
-#if defined(MR_WIN32)
-
-    IsOk = MR_NO;
-    ErrorMsg = MR_make_string_const(""No source of random bytes on Windows"");
-
-#elif defined(MR_MAC_OSX) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__FreeBSD__)
-
-    // Use arc4random_buf on systems that support it.
-
-    arc4random_buf(buffer, 16);
-    int i;
-    for (i = 0; i < 16; i++) {
-        Array->elements[i] = buffer[i];
-    }
-    IsOk = MR_YES;
-    ErrorMsg = MR_make_string_const("""");
-
-#else
-
-    // A very rudimentary implementation using /dev/urandom.
-
-    int fd = open(""/dev/urandom"", O_RDONLY);
-    if (fd == -1) {
-        IsOk = MR_NO;
-        ErrorMsg = MR_make_string_const(""Cannot open /dev/urandom"");
-    } else {
-        ssize_t num_read = read(fd, buffer, 16);
-        if (num_read != 16) {
-            IsOk = MR_NO;
-            ErrorMsg = MR_make_string_const(""Cannot read 16 bytes"");
-        } else {
-            int i;
-            for (i = 0; i < 16; i++) {
-                Array->elements[i] = buffer[i];
-            }
-            IsOk = MR_YES;
-            ErrorMsg = MR_make_string_const("""");
-        }
-        close(fd);
-    }
-
-#endif
-").
-
-get_random_bytes(_, _, _, _, _, _) :-
-    unexpected($pred, "call to get_random_bytes/6 on non-C backend").
-
-%---------------------------------------------------------------------------%
-%
-% Random generation with user-specified RNG.
-%
 
 random_uuid(RNG, UUID, !State) :-
     array.generate_foldl(16, generate_byte(RNG), ByteArray, !State),
