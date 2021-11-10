@@ -467,8 +467,8 @@ from_string(S, U) :-
 
     U = uuid(
         uint32.cast_from_uint(TimeLow),
-        uint16.cast_from_int(uint.cast_to_int(TimeMid)),
-        uint16.cast_from_int(uint.cast_to_int(TimeHiAndVersion)),
+        uint16.cast_from_uint(TimeMid),
+        uint16.cast_from_uint(TimeHiAndVersion),
         ClockSeqHiAndReserved,
         ClockSeqLo,
         Node0,
