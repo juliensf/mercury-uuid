@@ -1,7 +1,7 @@
 %---------------------------------------------------------------------------%
 % vim: ft=mercury ts=4 sw=4 et wm=0 tw=0
 %---------------------------------------------------------------------------%
-% Copyright (C) 2016, 2020 Julien Fischer.
+% Copyright (C) 2016, 2020-2021 Julien Fischer.
 % See the file COPYING for license details.
 %
 % Author: Julien Fischer <juliensf@gmail.com>
@@ -405,17 +405,17 @@ variant(U) = Variant :-
 to_string(U) = S :-
     string.format(
         "%8.8x-%4.4x-%4.4x-%2.2x%2.2x-%2.2x%2.2x%2.2x%2.2x%2.2x%2.2x", [
-        u(cast_to_uint(U ^ time_low)),
-        u(cast_to_uint(U ^ time_mid)),
-        u(cast_to_uint(U ^ time_hi_and_version)),
-        u(cast_to_uint(U ^ clock_seq_hi_and_reserved)),
-        u(cast_to_uint(U ^ clock_seq_low)),
-        u(cast_to_uint(U ^ node0)),
-        u(cast_to_uint(U ^ node1)),
-        u(cast_to_uint(U ^ node2)),
-        u(cast_to_uint(U ^ node3)),
-        u(cast_to_uint(U ^ node4)),
-        u(cast_to_uint(U ^ node5))],
+        u32(U ^ time_low),
+        u16(U ^ time_mid),
+        u16(U ^ time_hi_and_version),
+        u8(U ^ clock_seq_hi_and_reserved),
+        u8(U ^ clock_seq_low),
+        u8(U ^ node0),
+        u8(U ^ node1),
+        u8(U ^ node2),
+        u8(U ^ node3),
+        u8(U ^ node4),
+        u8(U ^ node5)],
         S).
 
 :- pragma foreign_proc("Java",
