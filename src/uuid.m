@@ -1,7 +1,7 @@
 %---------------------------------------------------------------------------%
 % vim: ft=mercury ts=4 sw=4 et wm=0 tw=0
 %---------------------------------------------------------------------------%
-% Copyright (C) 2016, 2020-2021 Julien Fischer.
+% Copyright (C) 2016, 2020-2021, 2023 Julien Fischer.
 % See the file COPYING for license details.
 %
 % Author: Julien Fischer <juliensf@gmail.com>
@@ -531,7 +531,6 @@ octet_from_string(S, I, U8) :-
         U = System.Guid.Empty;
         SUCCESS_INDICATOR = false;
     }
-
 ").
 
 det_from_string(S) =
