@@ -1,7 +1,7 @@
 %---------------------------------------------------------------------------%
 % vim: ft=mercury ts=4 sw=4 et wm=0 tw=0
 %---------------------------------------------------------------------------%
-% Copyright (C) 2016, 2020-2021, 2023 Julien Fischer.
+% Copyright (C) 2016, 2020-2021, 2023-2024 Julien Fischer.
 % See the file COPYING for license details.
 %
 % Author: Julien Fischer <juliensf@gmail.com>
@@ -36,12 +36,12 @@
     %     Octet 10 - 15 : an unsigned 48-bit integer.
     %
     % Note that for the Java backend the above ordering differs from that
-    % provided by the Java's compareTo() method.
+    % provided by Java's compareTo() method.
     %
 :- type uuid.
 
     % Return the nil (empty) UUID.
-    % This is a UUID where all 128 bits are set to zero.
+    % This is a UUID where all bits are set to zero.
     %
 :- func nil_uuid = uuid.
 
