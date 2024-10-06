@@ -184,6 +184,10 @@ version_uuids = [
     uuid("cea59c91-c0cd-33af-bee3-a799ddaba88c"),  % Name-based MD5   (v3)
     uuid("2b397df2-0809-412c-907d-c5bd26df775f"),  % Random           (v4)
     uuid("7688ece8-8e50-5bfa-ac80-26bb3da00d61"),  % Name-based SHA-1 (v5)
+    uuid("1ec9414c-232a-6b00-b3c8-9f6bdeced846"),  % (v6)
+    uuid("017f22e2-79b0-7cc3-98c4-dc0c0c07398f"),  % (v7)
+    uuid("2489e9ad-2ee2-8e00-8ec9-32d5f69181c0"),  % (v8)
+    uuid("5c146b14-3c52-8afd-938a-375d0df1fbf6"),  % (v8)
 
     % The following are taken from the libuuid test suite.
     % (https://github.com/karelzak/util-linux/blob/master/tests/expected/uuid/uuidparse)

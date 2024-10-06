@@ -53,6 +53,9 @@
     %     3 - Named-based based UUID generated using MD5 hash.
     %     4 - Randomly generated UUID.
     %     5 - Name-based UUID generated using SHA1 hash.
+    %     6 - Reordered time-based UUID.
+    %     7 - Timestamp and random UUID.
+    %     8 - Custom UUID.
     %
 :- func version(uuid) = int.
 
@@ -226,8 +229,8 @@ uuid_compare(_, _, _) :-
 :- pragma foreign_code("Java", "
 
 // Java's UUID.compareTo method works by comparing the long components of the
-// UUID.  This is not consistent with how libbuid etc implement comparison of
-// UUIDs.  The following implements the libuuid style comparison for Java.
+// UUID. This is not consistent with how libbuid etc implement comparison of
+// UUIDs. The following implements the libuuid style comparison for Java.
 //
 public static builtin.Comparison_result_0 do_uuid_compare(
      java.util.UUID A, java.util.UUID B)
