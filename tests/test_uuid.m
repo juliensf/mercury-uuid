@@ -92,6 +92,11 @@ test_strings = [
     "7752e86b-55cd-46c2-bbf5-c71af5128c43  ",   % Trailing whitespace.
     "7752e86b-55cd-   46c2-bbf5-c71af5128c43",
 
+    "1ec9414c-232a-6b00-b3c8-9f6bdeced846", % v6.
+    "017f22e2-79b0-7cc3-98c4-dc0c0c07398f", % v7.
+    "2489e9ad-2ee2-8e00-8ec9-32d5f69181c0", % v8.
+    "5c146b14-3c52-8afd-938a-375d0df1fbf6", % v8.
+
     "",
     "abcdef",
 
