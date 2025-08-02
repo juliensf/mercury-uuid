@@ -1,7 +1,7 @@
 %---------------------------------------------------------------------------%
 % vim: ft=mercury ts=4 sw=4 et wm=0 tw=0
 %---------------------------------------------------------------------------%
-% Copyright (C) 2016, 2020-2021, 2023-2024 Julien Fischer.
+% Copyright (C) 2016, 2020-2021, 2023-2025 Julien Fischer.
 % See the file COPYING for license details.
 %
 % Author: Julien Fischer <juliensf@gmail.com>
@@ -75,8 +75,8 @@
     %
     %    xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
     %
-    % where each 'x' is a hexadecimal digit.  Alphabetic hexadecimal
-    % digits will be lowercase.
+    % where each 'x' is a hexadecimal digit.
+    % Alphabetic hexadecimal digits will be lowercase.
     %
 :- func to_string(uuid) = string.
 
