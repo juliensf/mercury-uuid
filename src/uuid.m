@@ -1,7 +1,7 @@
 %---------------------------------------------------------------------------%
 % vim: ft=mercury ts=4 sw=4 et wm=0 tw=0
 %---------------------------------------------------------------------------%
-% Copyright (C) 2016, 2020-2021, 2023-2025 Julien Fischer.
+% Copyright (C) 2016, 2020-2021, 2023-2026 Julien Fischer.
 % See the file COPYING for license details.
 %
 % Author: Julien Fischer <juliensf@gmail.com>
@@ -50,7 +50,7 @@
     %
     %     1 - Time-based UUID.
     %     2 - DCE Security based UUID.
-    %     3 - Named-based based UUID generated using MD5 hash.
+    %     3 - Name-based UUID generated using MD5 hash.
     %     4 - Randomly generated UUID.
     %     5 - Name-based UUID generated using SHA1 hash.
     %     6 - Reordered time-based UUID.
@@ -128,7 +128,7 @@
     % generator.
     %
     % NOTE: you _must_ use a cryptographically strong (pseudo) random number
-    % generator with this predicate in order to minimise the possibility
+    % generator with this predicate in order to minimise the possibility of
     % collisions.
     %
 :- pred random_uuid(R::in, uuid::out, State::di, State::uo) is det
@@ -229,7 +229,7 @@ uuid_compare(_, _, _) :-
 :- pragma foreign_code("Java", "
 
 // Java's UUID.compareTo method works by comparing the long components of the
-// UUID. This is not consistent with how libbuid etc implement comparison of
+// UUID. This is not consistent with how libuuid etc implement comparison of
 // UUIDs. The following implements the libuuid style comparison for Java.
 //
 public static builtin.Comparison_result_0 do_uuid_compare(
